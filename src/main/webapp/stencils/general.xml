@@ -1,0 +1,30 @@
+<shapes name="mxgraph.general">
+	<shape name="rectangle" h="50" w="100" aspect="variable" strokewidth="inherit">
+	  <background>
+	  </background>
+	  <foreground>
+		<fillstroke/>
+		<rect x="0" y="0" w="100" h="50"/>
+		<fillstroke/>
+	  </foreground>
+	</shape>
+	<shape name="square" h="100" w="100" aspect="variable" strokewidth="inherit">
+	  <background>
+	  </background>
+	  <foreground>
+		<fillstroke/>
+		<rect x="0" y="0" w="100" h="100"/>
+		<fillstroke/>
+	  </foreground>
+	</shape>
+	<shape name="circle" h="100" w="100" aspect="variable" strokewidth="inherit">
+	  <background>
+	  </background>
+	  <foreground>
+		<fillstroke/>
+		<ellipse x="0" y="0" w="100" h="100"/>
+		<fillstroke/>
+	  </foreground>
+	</shape>
+
+</shapes>

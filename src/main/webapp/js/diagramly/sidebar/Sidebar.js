@@ -17,29 +17,29 @@
 	 * Overrides gear image URL.
 	 */
 	Sidebar.prototype.gearImage = GRAPH_IMAGE_PATH + '/clipart/Gear_128x128.png';
-	
+
 	/**
 	 * Aliases for IDs in the libs parameter.
 	 */
 	Sidebar.prototype.libAliases = {'aws2': 'aws3'};
-	
+
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.defaultEntries = 'general;uml;er;bpmn;flowchart;basic;arrows2';
-	
+
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.signs = ['Animals', 'Food', 'Healthcare', 'Nature', 'People', 'Safety', 'Science', 'Sports', 'Tech', 'Transportation', 'Travel'];
 
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.ibm = ['Analytics', 'Applications', 'Blockchain', 'Data', 'DevOps', 'Infrastructure', 'Management', 'Miscellaneous', 'Security', 'Social', 'Users'];
 
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.gcp = ['Cards', 'Big Data', 'Compute', 'Developer Tools', 'Extras', 'Identity and Security', 'Machine Learning', 'Management Tools', 'Networking', 'Storage Databases'];
 	/**
@@ -50,7 +50,7 @@
 	/**
 	 *
 	 */
-	Sidebar.prototype.pids = ['Agitators', 'Apparatus Elements', 'Centrifuges', 'Compressors', 'Compressors ISO', 'Crushers Grinding', 
+	Sidebar.prototype.pids = ['Agitators', 'Apparatus Elements', 'Centrifuges', 'Compressors', 'Compressors ISO', 'Crushers Grinding',
                               'Driers', 'Engines', 'Feeders', 'Filters', 'Fittings', 'Flow Sensors', 'Heat Exchangers', 'Instruments', 'Misc',
                               'Mixers', 'Piping', 'Pumps', 'Pumps DIN', 'Pumps ISO', 'Separators', 'Shaping Machines', 'Valves', 'Vessels'];
 
@@ -59,60 +59,60 @@
 	 */
 	Sidebar.prototype.cisco = ['Buildings', 'Computers and Peripherals', 'Controllers and Modules', 'Directors', 'Hubs and Gateways', 'Misc',
 	                           'Modems and Phones', 'People', 'Routers', 'Security', 'Servers', 'Storage', 'Switches', 'Wireless'];
-	
+
 	/**
 	 *
 	 */
 	Sidebar.prototype.cisco_safe = ['Architecture', 'Capability', 'Design', 'Threat'];
-	
+
 	/**
 	 *
 	 */
-	Sidebar.prototype.sysml = ['Model Elements', 'Blocks', 'Ports and Flows', 'Constraint Blocks', 'Activities', 'Interactions', 'State Machines', 
+	Sidebar.prototype.sysml = ['Model Elements', 'Blocks', 'Ports and Flows', 'Constraint Blocks', 'Activities', 'Interactions', 'State Machines',
 	                           'Use Cases', 'Allocations', 'Requirements', 'Profiles', 'Stereotypes'];
 
 	/**
 	 *
 	 */
-	Sidebar.prototype.eip = ['Message Construction', 'Message Routing', 'Message Transformation', 'Messaging Channels', 'Messaging Endpoints', 
+	Sidebar.prototype.eip = ['Message Construction', 'Message Routing', 'Message Transformation', 'Messaging Channels', 'Messaging Endpoints',
 	                         'Messaging Systems', 'System Management'];
 
 	/**
 	 *
 	 */
-	Sidebar.prototype.gmdl = ['Bottom Navigation', 'Bottom Sheets', 'Buttons', 'Cards', 'Chips', 'Dialogs', 'Dividers', 'Grid Lists', 'Icons', 'Lists', 'Menus', 'Misc', 'Pickers', 
+	Sidebar.prototype.gmdl = ['Bottom Navigation', 'Bottom Sheets', 'Buttons', 'Cards', 'Chips', 'Dialogs', 'Dividers', 'Grid Lists', 'Icons', 'Lists', 'Menus', 'Misc', 'Pickers',
 	                          'Selection Controls', 'Sliders', 'Steppers', 'Tabs', 'Text Fields'];
 
 	/**
 	 *
 	 */
-	Sidebar.prototype.aws2 = ['Analytics', 'Application Services', 'Compute', 'Database', 'Developer Tools', 'Enterprise Applications', 'Game Development', 'General', 'Internet of Things',  
+	Sidebar.prototype.aws2 = ['Analytics', 'Application Services', 'Compute', 'Database', 'Developer Tools', 'Enterprise Applications', 'Game Development', 'General', 'Internet of Things',
 	                          'Management Tools', 'Mobile Services', 'Networking', 'On-Demand Workforce', 'SDKs', 'Security and Identity', 'Storage and Content Delivery', 'Groups'];
 
 	/**
 	 *
 	 */
-	Sidebar.prototype.aws3 = ['Analytics', 'Application Services', 'Artificial Intelligence', 'Business Productivity', 'Compute', 'Contact Center', 'Database', 'Desktop and App Streaming', 'Developer Tools', 
-	                          'Game Development', 'General', 'Groups', 'Internet of Things',  
+	Sidebar.prototype.aws3 = ['Analytics', 'Application Services', 'Artificial Intelligence', 'Business Productivity', 'Compute', 'Contact Center', 'Database', 'Desktop and App Streaming', 'Developer Tools',
+	                          'Game Development', 'General', 'Groups', 'Internet of Things',
 	                          'Management Tools', 'Messaging', 'Migration', 'Mobile Services', 'Networking and Content Delivery', 'On Demand Workforce', 'SDKs', 'Security Identity and Compliance', 'Storage'];
-	
+
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.office = ['Clouds', 'Communications', 'Concepts', 'Databases', 'Devices', 'Security', 'Servers', 'Services', 'Sites', 'Users'];
 
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.veeam = ['2D', '3D'];
 
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.archimate3 = ['Application', 'Business', 'Composite', 'Implementation and Migration', 'Motivation', 'Physical', 'Relationships', 'Strategy', 'Technology'];
 
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.electrical = ['LogicGates', 'Resistors', 'Capacitors', 'Inductors', 'SwitchesRelays', 'Diodes', 'Sources', 'Transistors', 'Misc', 'Audio', 'PlcLadder', 'Abstract', 'Optical', 'VacuumTubes', 'Waveforms', 'Instruments', 'RotMech', 'Transmission'];
 
@@ -120,18 +120,18 @@
 	 *
 	 */
 	Sidebar.prototype.configuration = [{id: 'general', libs: ['general', 'misc', 'advanced']}, {id: 'uml'}, {id: 'search'}, {id: 'er'},
-	                                   {id: 'ios', prefix: 'ios', libs: [''/*prefix is library*/, '7icons', '7ui']}, 
+	                                   {id: 'ios', prefix: 'ios', libs: [''/*prefix is library*/, '7icons', '7ui']},
 	                                   {id: 'android', prefix: 'android', libs: [''/*prefix is library*/]}, {id: 'aws3d'},
 	                                   {id: 'flowchart'}, {id: 'basic'}, {id: 'arrows'}, {id: 'arrows2'}, {id: 'lean_mapping'}, {id: 'citrix'}, {id: 'azure'}, {id: 'network'}, {id: 'sitemap'},
-	                                   
+
 	                                   {id: 'mscae', prefix: 'mscae', libs: ['Cloud', 'Enterprise', 'General', 'General Symbols', 'Intune', 'OMS', 'OpsManager', 'Other', 'System Center', 'Virtual Machine', 'Deprecated', 'Cloud Color', 'Deprecated Color']},
-	                                   
+
 	                                   {id: 'bpmn', prefix: 'bpmn', libs: [''/*prefix is library*/, 'Gateways', 'Events']},
 	                                   {id: 'clipart', prefix: null, libs: ['computer', 'finance', 'clipart', 'networking', 'people', 'telco']},
 	                                   {id: 'ibm', prefix: 'ibm', libs: Sidebar.prototype.ibm},
 	                                   {id: 'eip', prefix: 'eip', libs: Sidebar.prototype.eip},
 	                                   {id: 'mockups', prefix: 'mockup', libs: ['Buttons', 'Containers', 'Forms', 'Graphics', 'Markup', 'Misc', 'Navigation', 'Text']},
-	                                   {id: 'pid2', prefix: 'pid2', libs: ['Agitators', 'Apparatus Elements', 'Centrifuges', 'Compressors', 'Compressors ISO', 'Crushers Grinding', 
+	                                   {id: 'pid2', prefix: 'pid2', libs: ['Agitators', 'Apparatus Elements', 'Centrifuges', 'Compressors', 'Compressors ISO', 'Crushers Grinding',
 	                                          	                          'Driers', 'Engines', 'Feeders', 'Filters', 'Fittings', 'Flow Sensors', 'Heat Exchangers', 'Instruments', 'Misc',
 	                                        	                          'Mixers', 'Piping', 'Pumps', 'Pumps DIN', 'Pumps ISO', 'Separators', 'Shaping Machines', 'Valves', 'Vessels']},
            	                           {id: 'signs', prefix: 'signs', libs: Sidebar.prototype.signs},
@@ -154,18 +154,18 @@
            	                           {id: 'archimate', libs: ['archimate']},
            	                           {id: 'webicons', libs: ['webicons', 'weblogos']},
            	                           {id: 'sysml', prefix: 'sysml', libs: Sidebar.prototype.sysml}];
-	
+
 	/**
 	 * Adds hint for quick tutorial video for certain search terms.
 	 */
 	var siderbarInsertSearchHint = Sidebar.prototype.insertSearchHint;
-	
+
 	Sidebar.prototype.insertSearchHint = function(div, searchTerm, count, page, results, len, more, terms)
 	{
 		if (terms != null && page == 1)
 		{
 			var hintText = null;
-			
+
 			// Adds hint for text inserts
 			if (mxUtils.indexOf(terms, 'text') >= 0)
 			{
@@ -177,7 +177,7 @@
 				var words = ['line', 'lines', 'arrow', 'arrows', 'connect', 'connection', 'connections',
 				             'connector', 'connectors', 'curve', 'curves', 'link', 'links', 'directed',
 				             'directional', 'bidirectional'];
-				
+
 				for (var i = 0; i < words.length; i++)
 				{
 					if (mxUtils.indexOf(terms, words[i]) >= 0)
@@ -187,7 +187,7 @@
 					}
 				}
 			}
-			
+
 			if (hintText != null && !this.hideSearchHint)
 			{
 				var link = document.createElement('a');
@@ -198,7 +198,7 @@
 					'border:1px solid black !important;text-align:center;white-space:normal;' +
 					'padding:6px 0px 6px 0px !important;margin:4px 4px 8px 2px;';
 				mxUtils.write(link, hintText);
-				
+
 				// Adds close button
 				var img = document.createElement('img');
 				img.setAttribute('src', Dialog.prototype.closeImage);
@@ -208,22 +208,22 @@
 				img.style.cursor = 'default';
 				img.style.top = '1px';
 				img.style.right = '0px';
-				
+
 				mxEvent.addListener(img, 'click', mxUtils.bind(this, function(evt)
 				{
 					link.parentNode.removeChild(link);
 					this.hideSearchHint = true;
 					mxEvent.consume(evt);
 				}));
-				
+
 				link.appendChild(img);
 				div.appendChild(link);
-				
+
 				// Shows hint only once
 				this.hideSearchHint = true;
 			}
 		}
-		
+
 		siderbarInsertSearchHint.apply(this, arguments);
 	};
 
@@ -242,7 +242,7 @@
 	{
 		this.showPalette(id);
 	};
-	
+
 	/**
 	 * Shows or hides palettes.
 	 */
@@ -254,27 +254,27 @@
 		}
 	};
 
-	
+
 	/**
 	 * Shows or hides a palette.
 	 */
 	Sidebar.prototype.showPalette = function(id, visible)
 	{
 		var elts = this.palettes[id];
-		
+
 		if (elts != null)
 		{
 			var vis = (visible != null) ? ((visible) ? 'block' : 'none') : (elts[0].style.display == 'none') ? 'block' : 'none';
-			
+
 			for (var i = 0; i < elts.length; i++)
 			{
 				elts[i].style.display = vis;
 			}
 		}
 	};
-	
+
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.isEntryVisible = function(key)
 	{
@@ -291,25 +291,25 @@
 				}
 			}
 		}
-		
+
 		return false;
 	};
-	
+
 	/**
-	 * 
+	 *
 	 */
 	Sidebar.prototype.showEntries = function(stc, remember, force)
 	{
 		this.libs = (stc != null && (force || stc.length > 0)) ? stc : ((urlParams['libs'] != null &&
 			urlParams['libs'].length > 0) ? decodeURIComponent(urlParams['libs']) : mxSettings.getLibraries());
 		var tmp = this.libs.split(';');
-		
+
 		// Maps library names via the alias table
 		for (var i = 0; i < tmp.length; i++)
 		{
 			tmp[i] = this.libAliases[tmp[i]] || tmp[i];
 		}
-		
+
 		for (var i = 0; i < this.configuration.length; i++)
 		{
 			// Search has separate switch in Extras menu
@@ -320,7 +320,7 @@
 					mxUtils.indexOf(tmp, this.configuration[i].id) >= 0);
 			}
 		}
-		
+
 		if (remember)
 		{
 			mxSettings.setLibraries(stc);
@@ -352,7 +352,7 @@
             			          {title: mxResources.get('uml'), id: 'uml', image: IMAGE_PATH + '/sidebar-uml.png'}]},
             			{title: mxResources.get('networking'),
             			entries: [{title: mxResources.get('aws'), id: 'aws3', image: IMAGE_PATH + '/sidebar-aws3.png'},
-            			// TODO: Add isometric containers  		                          
+            			// TODO: Add isometric containers
             			          {title: mxResources.get('aws3d'), id: 'aws3d', image: IMAGE_PATH + '/sidebar-aws3d.png'},
             			          {title: mxResources.get('azure'), id: 'azure', image: IMAGE_PATH + '/sidebar-azure.png'},
             			          {title: 'Cloud & Enterprise', id: 'mscae', image: IMAGE_PATH + '/sidebar-mscae.png'},
@@ -384,13 +384,13 @@
 
 		// Uses search.xml index file instead (faster load times)
 		this.addStencilsToIndex = false;
-		
+
 		// Contains additional tags for shapes
 		this.shapetags = {};
 
 		this.initPalettes();
 	}
-	
+
 	/**
 	 * Overridden to add image export via servlet
 	 */
@@ -399,21 +399,21 @@
 		Sidebar.prototype.addFoldingHandler = function(title, content, funct)
 		{
 			var initialized = false;
-	
+
 			// Avoids mixed content warning in IE6-8
 			if (!mxClient.IS_IE || document.documentMode >= 8)
 			{
 				title.style.backgroundImage = (content.style.display == 'none') ?
 					'url(\'' + this.collapsedImage + '\')' : 'url(\'' + this.expandedImage + '\')';
 			}
-			
+
 			title.style.backgroundRepeat = 'no-repeat';
 			title.style.backgroundPosition = '0% 50%';
-	
+
 			var btn = document.createElement('button');
 			btn.style.marginLeft = '4px';
 			mxUtils.write(btn, 'Save');
-			
+
 			mxEvent.addListener(title, 'click', mxUtils.bind(this, function(evt)
 			{
 				if (mxEvent.getSource(evt).nodeName == 'BUTTON')
@@ -427,48 +427,48 @@
 					title2.style.width = '456px';
 					title2.style.backgroundColor = '#ffffff';
 					title2.style.paddingLeft = '6px';
-					
+
 					var btn2 = title2.getElementsByTagName('button')[0];
 					btn2.parentNode.removeChild(btn2);
-					
+
 					var clone = content.cloneNode(true);
 					clone.style.backgroundColor = '#ffffff';
 					clone.style.borderColor = 'transparent';
 					clone.style.width = '456px';
-	
+
 					var html = '<!DOCTYPE html><html><head><link rel="stylesheet" type="text/css" href="https://www.draw.io/styles/grapheditor.css">' +
 						'</head><body style="background:#ffffff;font-family:Helvetica,Arial;">' +
 						title2.outerHTML + clone.outerHTML + '</body></html>';
-	
+
 					clone.style.position = 'absolute';
 					window.document.body.appendChild(clone);
 					var h = clone.clientHeight + 18;
 					clone.parentNode.removeChild(clone);
-					
+
 		    		new mxXmlRequest(EXPORT_URL, 'w=456&h=' + h + '&html=' + encodeURIComponent(
 		    			this.editorUi.editor.graph.compress(html))).simulate(document, '_blank');
-	
+
 					return;
 				}
-				
+
 				if (content.style.display == 'none')
 				{
 					if (!initialized)
 					{
 						initialized = true;
-						
+
 						if (funct != null)
 						{
 							if (btn.parentNode != null)
 							{
 								btn.parentNode.removeChild(btn);
 							}
-							
+
 							// Wait cursor does not show up on Mac
 							title.style.cursor = 'wait';
 							var prev = title.innerHTML;
 							title.innerHTML = mxResources.get('loading') + '...';
-							
+
 							window.setTimeout(function()
 							{
 								funct(content);
@@ -486,7 +486,7 @@
 					{
 						title.appendChild(btn);
 					}
-					
+
 					title.style.backgroundImage = 'url(\'' + this.expandedImage + '\')';
 					content.style.display = 'block';
 				}
@@ -494,18 +494,18 @@
 				{
 					title.style.backgroundImage = 'url(\'' + this.collapsedImage + '\')';
 					content.style.display = 'none';
-					
+
 					if (btn.parentNode != null)
 					{
 						btn.parentNode.removeChild(btn);
 					}
 				}
-				
+
 				mxEvent.consume(evt);
 			}));
 		};
 	}
-	
+
 	/**
 	 * Overridden to use shapetags to improve search results.
 	 */
@@ -514,40 +514,40 @@
 		if (style != null && style.substring(0, 6) == 'shape=')
 		{
 			var semi = style.indexOf(';');
-			
+
 			if (semi < 0)
 			{
 				semi = style.length;
 			}
-			
+
 			return style.substring(6, semi);
 		}
-		
+
 		return null;
 	};
-	
+
 	/**
 	 * Overridden to use shapetags to improve search results.
 	 */
 	var sidebarGetTagsForStencil = Sidebar.prototype.getTagsForStencil;
-	
+
 	Sidebar.prototype.getTagsForStencil = function(pkg, stc, moreTags)
 	{
 		var tags = sidebarGetTagsForStencil.apply(this, arguments);
-		
+
 		// Adds tags from tags file
 		if (this.shapetags != null)
 		{
 			pkg = pkg.toLowerCase();
 			stc = stc.toLowerCase();
-			
+
 			if (this.shapetags[pkg] != null)
 			{
 				tags.push(this.shapetags[pkg]);
 			}
-			
+
 			stc = pkg + '.' + stc;
-			
+
 			if (this.shapetags[stc] != null)
 			{
 				tags.push(this.shapetags[stc]);
@@ -556,25 +556,25 @@
 
 		return tags;
 	};
-	
+
 	/**
 	 * Overrides the sidebar init.
 	 */
 	Sidebar.prototype.addTagIndex = function(text)
 	{
 		var lines = text.split('\n');
-		
+
 		for (var i = 0; i < lines.length; i++)
 		{
 			if (lines[i] != null)
 			{
 				var tags = lines[i].split('\t');
-				
+
 				if (tags.length > 1)
 				{
 					var key = tags[0].toLowerCase().replace(' ', '_');
 					var value = mxUtils.trim(tags.slice(1, tags.length).join(' ').toLowerCase());
-					
+
 					if (value.length > 0)
 					{
 						this.shapetags[key] = value;
@@ -583,7 +583,7 @@
 			}
 		}
 	};
-	
+
 	/**
 	 * Overrides the sidebar init.
 	 */
@@ -592,22 +592,22 @@
 		if (node != null)
 		{
 			var shapes = node.getElementsByTagName('shape');
-			
+
 			for (var i = 0; i < shapes.length; i++)
 			{
 				var style = shapes[i].getAttribute('style');
 				var shapeStyle = this.extractShapeStyle(style);
-				
+
 				if (style != null && shapeStyle != null)
 				{
 					var lastDot = shapeStyle.lastIndexOf('.');
-					
+
 					if (lastDot > 0)
 					{
 						var pkg = shapeStyle.substring(0, lastDot);
 						var stc = shapeStyle.substring(lastDot + 1, shapeStyle.length);
 						var tags = this.getTagsForStencil(pkg, stc, shapes[i].getAttribute('tags'));
-						
+
 						// TODO: Use shapetags for programmatic stencils
 						if (tags != null)
 						{
@@ -615,7 +615,7 @@
 							var semi = style.indexOf(';');
 							style = 'shape=' + pkg + '.' + stc.toLowerCase() + ';' +
 								((semi < 0) ? '' : style.substring(semi + 1));
-							
+
 							this.createVertexTemplateEntry(style, parseInt(shapes[i].getAttribute('w')),
 									parseInt(shapes[i].getAttribute('h')), '', stc.replace(/_/g, ' '),
 									null, null, this.filterTags(tags.join(' ')));
@@ -625,7 +625,7 @@
 			}
 		}
 	};
-	
+
 	/**
 	 * Overrides the sidebar init.
 	 */
@@ -633,20 +633,7 @@
 	{
 		var imgDir = GRAPH_IMAGE_PATH;
 		var dir = STENCIL_PATH;
-		var signs = this.signs;
-		var gcp = this.gcp;
-		var rack = this.rack;
-		var pids = this.pids;
-		var cisco = this.cisco;
-		var cisco_safe = this.cisco_safe;
-		var sysml = this.sysml;
-		var eip = this.eip;
-		var gmdl = this.gmdl;
-		var office = this.office;
-		var veeam = this.veeam;
-		var archimate3 = this.archimate3;
-		var electrical = this.electrical;
-		
+
 		if (urlParams['createindex'] == '1')
 		{
 			mxLog.show();
@@ -655,387 +642,9 @@
 
 		this.addSearchPalette(true);
 		this.addGeneralPalette(true);
-		this.addMiscPalette(false);
-		this.addAdvancedPalette(false);
-		this.addUmlPalette(false);
-		this.addErPalette();
-		this.addBasicPalette();
-		this.addFlowchartPalette();
-		this.addNetworkPalette();
-		this.addAzurePalette();
-		this.addCitrixPalette();
-		this.addMSCAEPalette();
-		this.addBpmnPalette(dir, false);
-		this.addAWS3Palette();
-		this.addAWS3DPalette();
-		this.addLeanMappingPalette();
-		this.addIos7Palette();
-		this.addIosPalette();
-		this.addAndroidPalette();
-		this.addMockupPalette();
-		this.addElectricalPalette();
-		this.addOfficePalette();
-		this.addVeeamPalette();
-		this.addIBMPalette();
-		this.addSitemapPalette();
-
-		this.addStencilPalette('arrows', mxResources.get('arrows'), dir + '/arrows.xml',
-				';html=1;' + mxConstants.STYLE_VERTICAL_LABEL_POSITION + '=bottom;' + mxConstants.STYLE_VERTICAL_ALIGN + '=top;' + mxConstants.STYLE_STROKEWIDTH + '=2;strokeColor=#000000;');
-		
-		this.addArrows2Palette();
-				
-		this.addImagePalette('computer', 'Clipart / Computer', imgDir
-				+ '/lib/clip_art/computers/', '_128x128.png', ['Antivirus',
-				'Data_Filtering', 'Database', 'Database_Add', 'Database_Minus',
-				'Database_Move_Stack', 'Database_Remove', 'Fujitsu_Tablet',
-				'Harddrive', 'IBM_Tablet', 'iMac', 'iPad', 'Laptop', 'MacBook',
-				'Mainframe', 'Monitor', 'Monitor_Tower',
-				'Monitor_Tower_Behind', 'Netbook', 'Network', 'Network_2',
-				'Printer', 'Printer_Commercial', 'Secure_System', 'Server',
-				'Server_Rack', 'Server_Rack_Empty', 'Server_Rack_Partial',
-				'Server_Tower', 'Software', 'Stylus', 'Touch', 'USB_Hub',
-				'Virtual_Application', 'Virtual_Machine', 'Virus',
-				'Workstation' ], [ 'Antivirus', 'Data Filtering', 'Database',
-	            'Database Add', 'Database Minus', 'Database Move Stack',
-	            'Database Remove', 'Fujitsu Tablet', 'Harddrive', 'IBMTablet',
-	            'iMac', 'iPad', 'Laptop', 'MacBook', 'Mainframe', 'Monitor',
-	            'Monitor Tower', 'Monitor Tower Behind', 'Netbook', 'Network',
-	            'Network 2', 'Printer', 'Printer Commercial', 'Secure System',
-	            'Server', 'Server Rack', 'Server Rack Empty', 'Server Rack Partial',
-	            'Server Tower', 'Software', 'Stylus', 'Touch', 'USB Hub',
-	            'Virtual Application', 'Virtual Machine', 'Virus', 'Workstation']);
-		this.addImagePalette('finance', 'Clipart / Finance', imgDir
-				+ '/lib/clip_art/finance/', '_128x128.png', [ 'Arrow_Down',
-				'Arrow_Up', 'Coins', 'Credit_Card', 'Dollar', 'Graph',
-				'Pie_Chart', 'Piggy_Bank', 'Safe', 'Shopping_Cart',
-				'Stock_Down', 'Stock_Up'], ['Arrow_Down', 'Arrow Up',
-	            'Coins', 'Credit Card', 'Dollar', 'Graph', 'Pie Chart',
-	            'Piggy Bank', 'Safe', 'Shopping Basket', 'Stock Down', 'Stock Up']);
-		this.addImagePalette('clipart', 'Clipart / Various', imgDir
-				+ '/lib/clip_art/general/', '_128x128.png', [ 'Battery_0',
-				'Battery_100', 'Battery_50', 'Battery_75', 'Battery_allstates',
-				'Bluetooth', 'Earth_globe', 'Empty_Folder', 'Full_Folder',
-				'Gear', 'Keys', 'Lock', 'Mouse_Pointer', 'Plug', 'Ships_Wheel',
-				'Star', 'Tire' ], [ 'Battery 0%', 'Battery 100%', 'Battery 50%',
-	            'Battery 75%', 'Battery', 'Bluetooth', 'Globe',
-	            'Empty Folder', 'Full Folder', 'Gear', 'Keys', 'Lock', 'Mousepointer',
-	            'Plug', 'Ships Wheel', 'Star', 'Tire']);
-		this.addImagePalette('networking', 'Clipart / Networking', imgDir
-				+ '/lib/clip_art/networking/', '_128x128.png', ['Bridge',
-				'Certificate', 'Certificate_Off', 'Cloud', 'Cloud_Computer',
-				'Cloud_Computer_Private', 'Cloud_Rack', 'Cloud_Rack_Private',
-				'Cloud_Server', 'Cloud_Server_Private', 'Cloud_Storage',
-				'Concentrator', 'Email', 'Firewall_02', 'Firewall',
-				'Firewall-page1', 'Ip_Camera', 'Modem',
-				'power_distribution_unit', 'Print_Server',
-				'Print_Server_Wireless', 'Repeater', 'Router', 'Router_Icon',
-				'Switch', 'UPS', 'Wireless_Router', 'Wireless_Router_N'],
-				['Bridge', 'Certificate', 'Certificate Off', 'Cloud', 'Cloud Computer',
-				'Cloud Computer Private', 'Cloud Rack', 'Cloud Rack Private',
-				'Cloud Server', 'Cloud Server Private', 'Cloud Storage',
-				'Concentrator', 'Email', 'Firewall 1', 'Firewall 2',
-				'Firewall', 'Camera', 'Modem',
-				'Power Distribution Unit', 'Print Server',
-				'Print Server Wireless', 'Repeater', 'Router', 'Router Icon',
-				'Switch', 'UPS', 'Wireless Router', 'Wireless Router N'],
-				 {'Wireless_Router': 'wireless router switch wap wifi access point wlan',
-				  'Wireless_Router_N': 'wireless router switch wap wifi access point wlan',
-				  'Router': 'router switch',
-				  'Router_Icon': 'router switch'});
-		this.addImagePalette('people', 'Clipart / People', imgDir
-				+ '/lib/clip_art/people/', '_128x128.png', ['Suit_Man',
-				'Suit_Man_Black', 'Suit_Man_Blue', 'Suit_Man_Green',
-				'Suit_Man_Green_Black', 'Suit_Woman', 'Suit_Woman_Black',
-				'Suit_Woman_Blue', 'Suit_Woman_Green',
-				'Suit_Woman_Green_Black', 'Construction_Worker_Man',
-				'Construction_Worker_Man_Black', 'Construction_Worker_Woman',
-				'Construction_Worker_Woman_Black', 'Doctor_Man',
-				'Doctor_Man_Black', 'Doctor_Woman', 'Doctor_Woman_Black',
-				'Farmer_Man', 'Farmer_Man_Black', 'Farmer_Woman',
-				'Farmer_Woman_Black', 'Nurse_Man', 'Nurse_Man_Black',
-				'Nurse_Woman',
-				'Nurse_Woman_Black',
-				'Military_Officer', 'Military_Officer_Black',
-				'Military_Officer_Woman', 'Military_Officer_Woman_Black',
-				'Pilot_Man', 'Pilot_Man_Black', 'Pilot_Woman',
-				'Pilot_Woman_Black', 'Scientist_Man', 'Scientist_Man_Black',
-				'Scientist_Woman', 'Scientist_Woman_Black', 'Security_Man',
-				'Security_Man_Black', 'Security_Woman', 'Security_Woman_Black',
-				'Tech_Man', 'Tech_Man_Black',
-				'Telesales_Man', 'Telesales_Man_Black', 'Telesales_Woman',
-				'Telesales_Woman_Black', 'Waiter', 'Waiter_Black',
-				'Waiter_Woman', 'Waiter_Woman_Black', 'Worker_Black',
-				'Worker_Man', 'Worker_Woman', 'Worker_Woman_Black']);
-		this.addImagePalette('telco', 'Clipart / Telecommunication', imgDir
-				+ '/lib/clip_art/telecommunication/', '_128x128.png', [
-				'BlackBerry', 'Cellphone', 'HTC_smartphone', 'iPhone',
-				'Palm_Treo', 'Signal_tower_off', 'Signal_tower_on' ],
-				['BlackBerry', 'Cellphone', 'HTC smartphone', 'iPhone',
-				  'Palm Treo', 'Signaltower off', 'Signaltower on']);
-
-		for (var i = 0; i < signs.length; i++)
-		{
-			this.addStencilPalette('signs' + signs[i], 'Signs / ' + signs[i],
-				dir + '/signs/' + signs[i].toLowerCase() + '.xml',
-				';html=1;fillColor=#000000;strokeColor=none;verticalLabelPosition=bottom;verticalAlign=top;align=center;');
-		}
-		
-		for (var i = 0; i < gcp.length; i++)
-		{
-			if (gcp[i].toLowerCase() === 'cards')
-			{
-				this.addGoogleCloudPlatformCardsPalette();
-			}
-			else
-			{
-				this.addStencilPalette('gcp' + gcp[i], 'GCP / ' + gcp[i],
-						dir + '/gcp/' + gcp[i].toLowerCase().replace(/ /g, '_') + '.xml',
-						';html=1;fillColor=#4387FD;gradientColor=#4683EA;strokeColor=none;verticalLabelPosition=bottom;verticalAlign=top;align=center;');
-			}
-		}
-
-		for (var i = 0; i < rack.length; i++)
-		{
-			if (rack[i].toLowerCase() === 'general')
-			{
-				this.addRackGeneralPalette();
-			}
-			else if (rack[i].toLowerCase() === 'f5')
-			{
-				this.addRackF5Palette();
-			}
-			else
-			{
-				this.addStencilPalette('rack' + rack[i], 'Rack / ' + rack[i],
-					dir + '/rack/' + rack[i].toLowerCase() + '.xml',
-					';html=1;labelPosition=right;align=left;spacingLeft=15;dashed=0;shadow=0;fillColor=#ffffff;');
-			}
-		}
-
-		for (var i = 0; i < pids.length; i++)
-		{
-			if (pids[i] == 'Instruments')
-			{
-				this.addPidInstrumentsPalette();
-			}
-			else if (pids[i] == 'Misc')
-			{
-				this.addPidMiscPalette();
-			}
-			else if (pids[i] == 'Valves')
-			{
-				this.addPidValvesPalette();
-			}
-			else if (pids[i] == 'Compressors')
-			{
-				this.addPidCompressorsPalette();
-			}
-			else if (pids[i] == 'Engines')
-			{
-				this.addPidEnginesPalette();
-			}
-			else if (pids[i] == 'Filters')
-			{
-				this.addPidFiltersPalette();
-			}
-			else if (pids[i] == 'Flow Sensors')
-			{
-				this.addPidFlowSensorsPalette();
-			}
-			else if (pids[i] == 'Piping')
-			{
-				this.addPidPipingPalette();
-			}
-			else
-			{
-				this.addStencilPalette('pid' + pids[i], 'Proc. Eng. / ' + pids[i],
-					dir + '/pid/' + pids[i].toLowerCase().replace(' ', '_') + '.xml',
-					';html=1;align=center;' + mxConstants.STYLE_VERTICAL_LABEL_POSITION + '=bottom;' + mxConstants.STYLE_VERTICAL_ALIGN + '=top;dashed=0;');
-			}
-		}
-		
-		for (var i = 0; i < sysml.length; i++)
-		{
-			if (sysml[i] == 'Model Elements')
-			{
-				this.addSysMLModelElementsPalette();
-			}
-			else if (sysml[i] == 'Blocks')
-			{
-				this.addSysMLBlocksPalette();
-			}
-			else if (sysml[i] == 'Ports and Flows')
-			{
-				this.addSysMLPortsAndFlowsPalette();
-			}
-			else if (sysml[i] == 'Constraint Blocks')
-			{
-				this.addSysMLConstraintBlocksPalette();
-			}
-			else if (sysml[i] == 'Activities')
-			{
-				this.addSysMLActivitiesPalette();
-			}
-			else if (sysml[i] == 'Interactions')
-			{
-				this.addSysMLInteractionsPalette();
-			}
-			else if (sysml[i] == 'State Machines')
-			{
-				this.addSysMLStateMachinesPalette();
-			}
-			else if (sysml[i] == 'Use Cases')
-			{
-				this.addSysMLUseCasesPalette();
-			}
-			else if (sysml[i] == 'Allocations')
-			{
-				this.addSysMLAllocationsPalette();
-			}
-			else if (sysml[i] == 'Requirements')
-			{
-				this.addSysMLRequirementsPalette();
-			}
-			else if (sysml[i] == 'Profiles')
-			{
-				this.addSysMLProfilesPalette();
-			}
-			else if (sysml[i] == 'Stereotypes')
-			{
-				this.addSysMLStereotypesPalette();
-			}
-		}
-
-		for (var i = 0; i < eip.length; i++)
-		{
-			if (eip[i] == 'Message Construction')
-			{
-				this.addEipMessageConstructionPalette();
-			}
-			else if (eip[i] == 'Message Routing')
-			{
-				this.addEipMessageRoutingPalette();
-			}
-			else if (eip[i] == 'Message Transformation')
-			{
-				this.addEipMessageTransformationPalette();
-			}
-			else if (eip[i] == 'Messaging Channels')
-			{
-				this.addEipMessagingChannelsPalette();
-			}
-			else if (eip[i] == 'Messaging Endpoints')
-			{
-				this.addEipMessagingEndpointsPalette();
-			}
-			else if (eip[i] == 'Messaging Systems')
-			{
-				this.addEipMessagingSystemsPalette();
-			}
-			else if (eip[i] == 'System Management')
-			{
-				this.addEipSystemManagementPalette();
-			}
-		}
-		
-		for (var i = 0; i < cisco.length; i++)
-		{
-			this.addStencilPalette('cisco' + cisco[i], 'Cisco / ' + cisco[i],
-				dir + '/cisco/' + cisco[i].toLowerCase().replace(/ /g, '_') + '.xml',
-				';html=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;', null, null, 1.6);
-		}
-
-		this.addCiscoSafePalette();
-		this.addFloorplanPalette();
-		this.addAtlassianPalette();
-		this.addBootstrapPalette();
-
-		for (var i = 0; i < gmdl.length; i++)
-		{
-			if (gmdl[i] == 'Bottom Navigation')
-			{
-				this.addGMDLBottomNavigationPalette();
-			}
-			else if (gmdl[i] == 'Bottom Sheets')
-			{
-				this.addGMDLBottomSheetsPalette();
-			}
-			else if (gmdl[i] == 'Buttons')
-			{
-				this.addGMDLButtonsPalette();
-			}
-			else if (gmdl[i] == 'Cards')
-			{
-				this.addGMDLCardsPalette();
-			}
-			else if (gmdl[i] == 'Chips')
-			{
-				this.addGMDLChipsPalette();
-			}
-			else if (gmdl[i] == 'Dialogs')
-			{
-				this.addGMDLDialogsPalette();
-			}
-			else if (gmdl[i] == 'Dividers')
-			{
-				this.addGMDLDividersPalette();
-			}
-			else if (gmdl[i] == 'Grid Lists')
-			{
-				this.addGMDLGridListsPalette();
-			}
-			else if (gmdl[i] == 'Icons')
-			{
-				this.addGMDLIconsPalette();
-			}
-			else if (gmdl[i] == 'Lists')
-			{
-				this.addGMDLListsPalette();
-			}
-			else if (gmdl[i] == 'Menus')
-			{
-				this.addGMDLMenusPalette();
-			}
-			else if (gmdl[i] == 'Misc')
-			{
-				this.addGMDLMiscPalette();
-			}
-			else if (gmdl[i] == 'Pickers')
-			{
-				this.addGMDLPickersPalette();
-			}
-			else if (gmdl[i] == 'Selection Controls')
-			{
-				this.addGMDLSelectionControlsPalette();
-			}
-			else if (gmdl[i] == 'Sliders')
-			{
-				this.addGMDLSlidersPalette();
-			}
-			else if (gmdl[i] == 'Steppers')
-			{
-				this.addGMDLSteppersPalette();
-			}
-			else if (gmdl[i] == 'Tabs')
-			{
-				this.addGMDLTabsPalette();
-			}
-			else if (gmdl[i] == 'Text Fields')
-			{
-				this.addGMDLTextFieldsPalette();
-			}
-		}
-
-		this.addCabinetsPalette();
-		this.addArchimate3Palette();
-		this.addArchiMatePalette();
-		this.addWebIconsPalette();
-		this.addWebLogosPalette();
-		
-		// LATER: Check if conflicts with restore libs after loading file
-		this.showEntries();
+		this.addStencilPalette('Stencil', 'Stencil', STENCIL_PATH+'/stencil.xml',';html=1;');
 	};
-	
+
 	/**
 	 * Overridden to manually create search index for stencil files which are not pre-loaded
 	 * and no entries are created programmatically.
@@ -1043,19 +652,19 @@
 	if (urlParams['createindex'] == '1')
 	{
 		var sidebarAddStencilPalette = Sidebar.prototype.addStencilPalette;
-		
+
 		Sidebar.prototype.addStencilPalette = function(id, title, stencilFile, style, ignore, onInit, scale, tags)
 		{
 			sidebarAddStencilPalette.apply(this, arguments);
 			scale = (scale != null) ? scale : 1;
-	
+
 			// Used for creating index
 			mxStencilRegistry.loadStencilSet(stencilFile, mxUtils.bind(this, function(packageName, stencilName, displayName, w, h)
 			{
 				if (ignore == null || mxUtils.indexOf(ignore, stencilName) < 0)
 				{
 					var tmpTags = (tags != null) ? tags[stencilName] : null;
-	
+
 					mxLog.debug('<shape style="shape=' + packageName + stencilName + style + '" ' +
 						'w="' + Math.round(w * scale) + '" h="' + Math.round(h * scale) + '"' +
 						((tmpTags != null) ? ' tags="' + tmpTags + '"' : '') + '/>');
@@ -1063,38 +672,38 @@
 			}), true);
 		};
 	}
-	
+
 	/**
 	 * Adds server icon results to local search results
 	 */
 	var sidebarSearchEntries = Sidebar.prototype.searchEntries;
-	
+
 	Sidebar.prototype.searchEntries = function(searchTerms, count, page, success, error)
 	{
 		var succ = success;
-		
+
 		// Lazy-load indices
 		if (this.searchFileData != null)
 		{
 			this.addSearchFileData(mxUtils.parseXml(this.editorUi.editor.graph.decompress(this.searchFileData)).documentElement);
-			
+
 			this.searchFileData = null;
 		}
-		
+
 		// Adds tags from compressed text file for improved searches.
 		if (this.tagIndex != null)
 		{
 			this.addTagIndex(this.editorUi.editor.graph.decompress(this.tagIndex));
-			
+
 			this.tagIndex = null;
 		}
-		
+
 		// Logs search terms for improving search results
 		if (!this.editorUi.isOffline() && page == 0)
 		{
 			this.editorUi.logEvent({category: 'Sidebar', action: 'search', label: searchTerms});
 		}
-		
+
 		if (ICONSEARCH_PATH != null)
 		{
 			success = mxUtils.bind(this, function(results, len, more, terms)
@@ -1102,7 +711,7 @@
 				if (!this.editorUi.isOffline() && results.length <= count / 4)
 				{
 					var pg = page - Math.ceil((len - count / 4) / count);
-	
+
 					mxUtils.get(ICONSEARCH_PATH + '?v=2&q=' + encodeURIComponent(searchTerms) +
 						'&p=' + pg + '&c=' + count, mxUtils.bind(this, function(req)
 					{
@@ -1113,7 +722,7 @@
 								try
 								{
 									var res = JSON.parse(req.getText());
-									
+
 									if (res == null || res.icons == null)
 									{
 										succ(results, len, false, terms);
@@ -1125,15 +734,15 @@
 										{
 											var sizes = res.icons[i].raster_sizes;
 											var index = sizes.length - 1;
-											
+
 											while (index > 0 && sizes[index].size > 128)
 											{
 												index--;
 											}
-					
+
 											var size = sizes[index].size;
 											var url = sizes[index].formats[0].preview_url;
-					
+
 											if (size != null && url != null)
 											{
 												(mxUtils.bind(this, function(s, u)
@@ -1147,7 +756,7 @@
 												}))(size, url);
 											}
 										}
-					
+
 										succ(results, (page - 1) * count + results.length, res.icons.length == count, terms);
 									}
 								}
@@ -1180,7 +789,7 @@
 				}
 			});
 		}
-		
+
 		sidebarSearchEntries.apply(this, arguments);
 	};
 
@@ -1188,16 +797,16 @@
 	 * Adds a click handler for inserting the cell as target for dangling edge.
 	 */
 	var sidebarItemClicked = Sidebar.prototype.itemClicked;
-	
+
 	Sidebar.prototype.itemClicked = function(cells, ds, evt)
 	{
 		var graph = this.editorUi.editor.graph;
 		var handled = false;
-		
+
 		if (cells != null && graph.getSelectionCount() == 1 && graph.getModel().isVertex(cells[0]))
 		{
 			var target = graph.cloneCells(cells)[0];
-			
+
 			// Inserts cell as target of selected edge if not connected
 			if (graph.getModel().isEdge(graph.getSelectionCell()) && graph.getModel().getTerminal(graph.getSelectionCell(), false) == null &&
 				graph.getModel().isVertex(target))
@@ -1206,7 +815,7 @@
 				try
 				{
 					var edgeState = graph.view.getState(graph.getSelectionCell());
-					
+
 					if (edgeState != null)
 					{
 						var tr = graph.view.translate;
@@ -1216,7 +825,7 @@
 						target.geometry.x = pt.x / s - tr.x - target.geometry.width / 2;
 						target.geometry.y = pt.y / s - tr.y - target.geometry.height / 2;
 					}
-					
+
 					graph.addCell(target);
 					graph.getModel().setTerminal(graph.getSelectionCell(), target, false);
 				}
@@ -1224,13 +833,13 @@
 				{
 					graph.getModel().endUpdate();
 				}
-				
+
 				graph.scrollCellToVisible(target);
 				graph.setSelectionCell(target);
 				handled = true;
 			}
 		}
-		
+
 		if (!handled)
 		{
 			sidebarItemClicked.apply(this, arguments);

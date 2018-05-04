@@ -1,0 +1,61 @@
+<shapes name="mxgraph.stencil">
+	<shape name="Octagon" h="98" w="98" aspect="variable" strokewidth="inherit">
+		<background>
+		<path>
+		<move x="0" y="29"/>
+		<line x="29" y="0"/>
+		<line x="69" y="0"/>
+		<line x="98" y="29"/>
+		<line x="98" y="69"/>
+		<line x="69" y="98"/>
+		<line x="29" y="98"/>
+		<line x="0" y="69"/>
+		<close/>
+		</path>
+		</background>
+		<foreground>
+		<fillstroke/>
+		</foreground>
+	</shape>
+	<shape aspect="variable" h="100" name="Cube" strokewidth="inherit" w="100">
+    <connections/>
+    <foreground>
+        <path>
+            <move x="0" y="20"/>
+            <line x="50" y="0"/>
+            <line x="100" y="20"/>
+            <line x="100" y="80"/>
+            <line x="50" y="100"/>
+            <line x="0" y="80"/>
+            <close/>
+        </path>
+        <fillstroke/>
+        <path>
+            <move x="0" y="20"/>
+            <line x="50" y="40"/>
+            <line x="100" y="20"/>
+            <move x="50" y="40"/>
+            <line x="50" y="100"/>
+        </path>
+        <stroke/>
+    </foreground>
+	</shape>
+	<shape name="Cone" h="96.91" w="99" aspect="variable" strokewidth="inherit">
+		<background>
+		<path>
+		<move x="49.5" y="0"/>
+		<line x="99" y="88"/>
+		<arc rx="25" ry="4.5" x-axis-rotation="0" large-arc-flag="1" sweep-flag="1" x="0" y="88"/>
+		<close/>
+		</path>
+		</background>
+		<foreground>
+		<fillstroke/>
+		<path>
+		<move x="0" y="88"/>
+		<arc rx="25" ry="4.5" x-axis-rotation="0" large-arc-flag="1" sweep-flag="1" x="99" y="88"/>
+		</path>
+		<fillstroke/>
+		</foreground>
+	</shape>
+</shapes>
