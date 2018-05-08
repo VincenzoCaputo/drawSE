@@ -1440,7 +1440,9 @@ ArrangePanel.prototype.init = function()
 	var graph = this.editorUi.editor.graph;
 	var ss = this.format.getSelectionState();
 
-	this.container.appendChild(this.addLayerOps(this.createPanel()));
+	if(this.editorUi.isShapeMode()) {
+		this.container.appendChild(this.addLayerOps(this.createPanel()));
+	}
 	// Special case that adds two panels
 	this.addGeometry(this.container);
 	this.addEdgeGeometry(this.container);
@@ -1575,7 +1577,7 @@ ArrangePanel.prototype.addGroupOps = function(div)
 		count++;
 	}
 
-	if (graph.getSelectionCount() == 1)
+	if (graph.getSelectionCount() == 1 && !graph.getSelectionCell().getAttribute('isConstraint',false))
 	{
 		if (count > 0)
 		{
@@ -3701,6 +3703,7 @@ StyleFormatPanel.prototype.init = function()
 	var graph = editor.graph;
 	var ss = this.format.getSelectionState();
 
+
 	if (!ss.containsImage || ss.style.shape == 'image')
 	{
 		this.container.appendChild(this.addFill(this.createPanel()));
@@ -3713,14 +3716,16 @@ StyleFormatPanel.prototype.init = function()
 	opacityPanel.style.paddingBottom = '8px';
 	this.container.appendChild(opacityPanel);
 	this.container.appendChild(this.addEffects(this.createPanel()));
-	var opsPanel = this.addEditOps(this.createPanel());
+	if(ui.isShapeMode() && !graph.selectionContainsContraints()) {
+		var opsPanel = this.addEditOps(this.createPanel());
 
-	if (opsPanel.firstChild != null)
-	{
-		mxUtils.br(opsPanel);
+		if (opsPanel.firstChild != null)
+		{
+			mxUtils.br(opsPanel);
+		}
+
+		this.container.appendChild(this.addStyleOps(opsPanel));
 	}
-
-	this.container.appendChild(this.addStyleOps(opsPanel));
 };
 
 /**

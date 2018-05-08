@@ -117,6 +117,7 @@
 	 */
 	EditorUi.prototype.formatEnabled = urlParams['format'] != '0';
 
+
 	/**
 	 * Capability check for canvas export
 	 */
@@ -183,6 +184,38 @@
 			// ignore
 		}
 	})();
+
+
+	/**
+	 * Specifica la modalità dell'editor (di default la modalità è quella di modifica dei simboli)
+	 */
+	 EditorUi.prototype.editorMode = 'Shape Editor Mode';
+	 /**
+		* Questa funzione permette di cambiare la modalità dell'editor
+		*/
+	 EditorUi.prototype.switchMode = function() {
+		 if(this.editorMode == mxResources.get('shapeMode')) {
+			 this.editorMode = mxResources.get('connectionMode');
+		 } else if(this.editorMode == mxResources.get('connectionMode')) {
+			 this.editorMode = mxResources.get('shapeMode');
+		 }
+	 }
+
+	 EditorUi.prototype.isShapeMode = function() {
+		 if(this.editorMode == mxResources.get('shapeMode') ) {
+				return true;
+			} else {
+				return false;
+			}
+	 }
+
+	 EditorUi.prototype.isConnectionMode = function() {
+		 if(this.editorMode == mxResources.get('connectionMode') ) {
+				return true;
+			} else {
+				return false;
+			}
+	 }
 
 	/**
 	 * Hook for subclassers.

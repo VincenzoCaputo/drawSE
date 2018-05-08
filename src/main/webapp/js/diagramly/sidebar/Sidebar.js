@@ -627,6 +627,57 @@
 	};
 
 	/**
+	*	Rimuove le palette non utili e aggiunge quelle necessarie a seconda della modalità
+	*/
+	Sidebar.prototype.switchPalettes = function() {
+		if(this.editorUi.isConnectionMode()) {
+			this.removePalette('general');
+		  this.removePalette('Stencil');
+			this.addAttackPointsPalette(true);
+		} else if(this.editorUi.isShapeMode()) {
+			this.removePalette('attack points');
+			this.addGeneralPalette(true);
+			this.addStencilPalette('Stencil', 'Stencil', STENCIL_PATH+'/stencil.xml',';html=1;');
+		}
+	}
+
+	/**
+  * Aggiunge la palette con i punti di attacco (punto, linea e linea curva)
+	*/
+	Sidebar.prototype.addAttackPointsPalette = function(expand) {
+			var lineTags = 'points attack connections ';
+			//Aggiungo un attributo per riconoscere questi simboli come punti di attacco
+			var doc = mxUtils.createXmlDocument();
+			var node = doc.createElement('AttackSymbol');
+			node.setAttribute('isConstraint', true);
+			node.setAttribute('label', '');
+			var fns = [
+				this.addEntry('point', mxUtils.bind(this, function()
+				{
+					var cell = new mxCell(node, new mxGeometry(0, 0, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
+					cell.vertex = true;
+					cell.connectable = false;
+					return this.createVertexTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Point');
+				})),
+				this.createEdgeTemplateEntry('endArrow=none;html=1;rounded=0;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;', 50, 50, node, 'Attack Line', null, lineTags + 'simple undirected plain blank no'),
+
+				this.addEntry('atckcurve', mxUtils.bind(this, function()
+				{
+					var cell = new mxCell(node, new mxGeometry(0, 0, 50, 50), 'curved=1;endArrow=none;html=1;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
+					cell.geometry.setTerminalPoint(new mxPoint(0, 50), true);
+					cell.geometry.setTerminalPoint(new mxPoint(50, 0), false);
+					cell.geometry.points = [new mxPoint(50, 50), new mxPoint(0, 0)];
+					cell.geometry.relative = true;
+					cell.edge = true;
+
+						return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Attack Curve');
+				})),
+			 ];
+
+			this.addPaletteFunctions('attack points', 'Attack points', (expand != null) ? expand : true, fns);
+		}
+
+	/**
 	 * Overrides the sidebar init.
 	 */
 	Sidebar.prototype.initPalettes = function()
