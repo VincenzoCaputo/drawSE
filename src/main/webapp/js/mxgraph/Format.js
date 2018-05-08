@@ -1606,11 +1606,11 @@ ArrangePanel.prototype.addGroupOps = function(div)
 		count++;
 	}
 	//Aggiungo il bottone per creare lo shape
-	if(graph.getSelectionCount() > 0) {
+	if(graph.getSelectionCount() > 1) {
 		if( count > 0) {
 			mxUtils.br(div);
 		}
-		btn = mxUtils.button('Merge', function(evt)
+		btn = mxUtils.button(mxResources.get('merge'), function(evt)
 		{
 			ui.actions.get('merge').funct();
 		})

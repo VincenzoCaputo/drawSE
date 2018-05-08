@@ -44,15 +44,13 @@ ShapeCreator.prototype.getSizeAndPosition = function (group) {
 /**
   Crea uno Stencil definito da un documento XML dato un array di cells e lo aggiunge al graph.
   @param cellGroup array di cells
-  @param shapeName nome da assegnare allo shape xml
 */
-ShapeCreator.prototype.mergeShapes = function(cellGroup, shapeName) {
+ShapeCreator.prototype.mergeShapes = function(cellGroup) {
   var groupProp = this.getSizeAndPosition(cellGroup);
 
   //Creo il documento XML per lo shape
   this.xmlDoc = mxUtils.createXmlDocument();
   var root = this.xmlDoc.createElement('shape');
-  root.setAttribute('name',shapeName);
   root.setAttribute('h',groupProp.h);
   root.setAttribute('w',groupProp.w);
   root.setAttribute('aspect','fixed');
@@ -101,7 +99,7 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup, shapeName) {
     var strokeColorNode = this.xmlDoc.createElement('strokecolor');
     strokeColorNode.setAttribute('color',shape.getStrokeColor());
     fgNode.appendChild(strokeColorNode);
-    
+
     //Per il colore di riempimento
     var fillColor=shape.getFillColor();
     if(fillColor!=null) {
@@ -116,18 +114,16 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup, shapeName) {
   }
   root.appendChild(fgNode);
 
-  var stencil = new mxStencil(root);
-  mxStencilRegistry.addStencil(root.getAttribute('name'), stencil);
   this.graph.getModel().beginUpdate();
   try {
-    var v1 = this.graph.insertVertex(this.graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape='+shapeName);
+    var xmlBase64 = this.graph.compress(mxUtils.getPrettyXml(root));
+    var v1 = this.graph.insertVertex(this.graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
 
     this.graph.removeCells(cellGroup);
 
     vertex.push(v1);
-    this.graph.setSelectionCells(vertex);
     if(vertex.length>1) {
-      this.graph.setSelectionCell(this.graph.groupCells(null, 0));
+      this.graph.setSelectionCell(this.graph.groupCells(null, 0, vertex.reverse()));
     }
   } finally {
     this.graph.getModel().endUpdate();

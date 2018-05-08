@@ -1535,6 +1535,13 @@
 	{
 		if (file != null)
 		{
+			//Cancello il contenuto della palette
+			file.setData(this.emptyLibraryXml);
+			//Salvo le modifiche
+			file.save(file.getTitle());
+			//Rimuovo i dati dallo storage locale
+			localStorage.removeItem(file.getTitle());
+
 			this.removeLibrarySidebar(file.getHash());
 
 			if (file.constructor != LocalLibrary)
@@ -1807,17 +1814,8 @@
 				{
 					this.closeLibrary(file);
 				});
-
-				if (saveBtn != null)
-				{
-					this.confirm(mxResources.get('allChangesLost'), null, fn,
-						mxResources.get('cancel'), mxResources.get('discardChanges'));
-				}
-				else
-				{
-					fn();
-				}
-
+				this.confirm(mxResources.get('allChangesLost'), fn, null,
+					mxResources.get('Ok'), mxResources.get('Cancel'));
 				mxEvent.consume(evt);
 			}
 		}));
@@ -1891,6 +1889,9 @@
 
 			var addCells = mxUtils.bind(this, function(cells, bounds, evt, title)
 			{
+				if(title==null) {
+					title = mxUtils.prompt('Insert a name for the shape: ', '');
+				}
 				cells = graph.cloneCells(mxUtils.sortCells(graph.model.getTopmostCells(cells)));
 
 				// Translates cells to origin

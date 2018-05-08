@@ -641,10 +641,33 @@
 		}
 
 		this.addSearchPalette(true);
+		this.addNewPaletteButton();
 		this.addGeneralPalette(true);
 		this.addStencilPalette('Stencil', 'Stencil', STENCIL_PATH+'/stencil.xml',';html=1;');
 	};
+	/**
+	 *	Aggiunge un bottone per creare nuove palette (scratchpad)
+	 */
+	Sidebar.prototype.addNewPaletteButton = function() {
+		var editor = this.editorUi;
+		var addNewPaletteButton = mxUtils.button(mxResources.get('newPalette'), function(evt) {
+			var title = 'NewPalette';
+			//Controllo che non sia già esistente una palette con questo nome
+			if(localStorage.getItem(title)==null) {
+				var emptyXml = editor.emptyLibraryXml;
+				editor.loadLibrary(new StorageLibrary(editor, emptyXml, title));
+			}
+		});
+		addNewPaletteButton.style.display = ' block';
+		addNewPaletteButton.style.margin = '10px auto 10px auto';
+		addNewPaletteButton.style.width = '75%';
+		this.container.appendChild(addNewPaletteButton);
 
+		var separatorDiv = document.createElement('div');
+		separatorDiv.style.borderBottom = '1px solid #C0C0C0';
+		separatorDiv.style.marginBottom = '10px';
+		this.container.appendChild(separatorDiv);
+	};
 	/**
 	 * Overridden to manually create search index for stencil files which are not pre-loaded
 	 * and no entries are created programmatically.

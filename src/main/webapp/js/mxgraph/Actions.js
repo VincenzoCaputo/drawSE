@@ -248,21 +248,9 @@ Actions.prototype.init = function()
 	this.addAction('removeFromGroup', function() { graph.removeCellsFromParent(); });
 	//Aggiungo action per la creazione di uno shape
 	this.addAction('merge', function() {
-			var shapeName = mxUtils.prompt('Insert a name for the shape: ', '');
-			//Controllo che il nome non sia vuoto o nullo
-			if(shapeName == null || !shapeName || shapeName.length === 0 || !shapeName.trim()) {
-				mxUtils.alert('You must specificy a name');
-			}
-			//Controllo che il nome non sia già presente creaShapenello StencilRegistry
-			else if(mxStencilRegistry.getStencil(shapeName)!=null) {
-				mxUtils.alert('The name must be univocal');
-			}
-			else {
-				var shapeCreator =new ShapeCreator(graph);
-				var selectionCells = graph.getSelectionCells();
-				shapeCreator.mergeShapes(selectionCells, shapeName);
-
-			}
+			var shapeCreator =new ShapeCreator(graph);
+			var selectionCells = graph.getSelectionCells();
+			shapeCreator.mergeShapes(selectionCells);
 
 	});
 	// Adds action
