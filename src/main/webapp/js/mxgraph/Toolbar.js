@@ -192,8 +192,6 @@ Toolbar.prototype.init = function()
 
 	var switchEvent = mxUtils.bind(this, function(evt) {
 		this.editorUi.switchMode();
-		this.editorUi.sidebar.switchPalettes();
-		this.editorUi.format.refresh();
 	});
 	mxEvent.addListener(inputNode, 'click', switchEvent);
  }
