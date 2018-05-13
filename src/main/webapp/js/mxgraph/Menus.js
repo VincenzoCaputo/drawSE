@@ -510,13 +510,13 @@ Menus.prototype.get = function(name)
 /**
  * Adds the given submenu.
  */
-Menus.prototype.addSubmenu = function(name, menu, parent)
+Menus.prototype.addSubmenu = function(name, menu, parent, label)
 {
 	var enabled = this.get(name).isEnabled();
 
 	if (menu.showDisabled || enabled)
 	{
-		var submenu = menu.addItem(mxResources.get(name), null, null, parent, null, enabled);
+		var submenu = menu.addItem(label || mxResources.get(name), null, null, parent, null, enabled);
 		this.addMenu(name, menu, submenu);
 	}
 };
@@ -1121,17 +1121,19 @@ Menus.prototype.createMenubar = function(container)
 /**
  * Creates the keyboard event handler for the current graph and history.
  */
-Menus.prototype.menuCreated = function(menu, elt)
+Menus.prototype.menuCreated = function(menu, elt, className)
 {
 	if (elt != null)
 	{
+		className = (className != null) ? className : 'geItem';
+
 		menu.addListener('stateChanged', function()
 		{
 			elt.enabled = menu.enabled;
 
 			if (!menu.enabled)
 			{
-				elt.className = 'geItem mxDisabled';
+				elt.className = className + ' mxDisabled';
 
 				if (document.documentMode == 8)
 				{
@@ -1140,7 +1142,7 @@ Menus.prototype.menuCreated = function(menu, elt)
 			}
 			else
 			{
-				elt.className = 'geItem';
+				elt.className = className;
 
 				if (document.documentMode == 8)
 				{

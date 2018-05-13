@@ -420,6 +420,7 @@ makeCopy=Make a Copy
 manual=Manual
 merge=Merge
 middle=Middle
+minimal=Minimal
 misc=Misc
 mockups=Mockups
 modificationDate=Modification date
