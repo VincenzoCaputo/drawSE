@@ -631,11 +631,12 @@
 	*	Rimuove le palette non utili e aggiunge quelle necessarie a seconda della modalità
 	*/
 	Sidebar.prototype.switchPalettes = function() {
-		if(this.editorUi.isConnectionMode()) {
+		var graph = this.editorUi.editor.graph;
+		if(graph.isConstraintMode()) {
 			this.removePalette('general');
-		    this.removePalette('Stencil');
+		  this.removePalette('Stencil');
 			this.addAttackPointsPalette(true);
-		} else if(this.editorUi.isShapeMode()) {
+		} else if(graph.isShapeMode()) {
 			this.removePalette('attack points');
 			this.addGeneralPalette(true);
 			this.addStencilPalette('Stencil', 'Stencil', STENCIL_PATH+'/stencil.xml',';html=1;');

@@ -196,93 +196,77 @@
 	})();
 
 	/**
-	 * Specifica la modalità dell'editor (di default la modalità è quella di modifica dei simboli)
+	 * Questa funzione permette di cambiare la modalità dell'editor
 	 */
-	 EditorUi.prototype.editorMode = 'Shape Editor Mode';
-	 /**
-		* Questa funzione permette di cambiare la modalità dell'editor
-		*/
-	 EditorUi.prototype.switchMode = function() {
-		 		var isEditable;
-				var connectionMode = this.isConnectionMode();
-				if(this.editorMode == mxResources.get('shapeMode')) {
-            this.editorMode = mxResources.get('connectionMode');
-            this.showConstraints();
-						isEditable = function(cell) {
-								if(!cell.getAttribute('isConstraint',false)) {
-										return false;
-								} else {
-										return true;
-								}
-						};
-        } else if(this.editorMode == mxResources.get('connectionMode')) {
-            this.editorMode = mxResources.get('shapeMode');
-            this.hideConstraints();
-						isEditable = function(cell) {
-								if(cell.getAttribute('isConstraint',false)) {
-										return false;
-								} else {
-										return true;
-								}
-						};
-        }
-         //Deseleziona tutti i simboli
-        this.editor.graph.setSelectionCells([]);
-         //Modifica le palette della sidebar
-        this.sidebar.switchPalettes();
-         //Aggiorna la format bar
-        this.format.refresh();
-
-				this.editor.graph.isCellMovable = isEditable;
-				this.editor.graph.isCellRotatable = isEditable;
-				this.editor.graph.isTerminalPointMovable = isEditable;
-				this.editor.graph.isCellDeletable = isEditable;
-				this.editor.graph.isCellCloneable = isEditable;
-				this.editor.graph.isCellBendable = isEditable;
-				this.editor.graph.isCellResizable = isEditable;
-
-	 }
-
-	 EditorUi.prototype.isShapeMode = function() {
-		 if(this.editorMode == mxResources.get('shapeMode') ) {
-				return true;
-			} else {
-				return false;
+	EditorUi.prototype.switchMode = function() {
+			var graph = this.editor.graph;
+			var isEditable, isEditablePoint;
+			var connectionMode = graph.isConstraintMode();
+			if(graph.isShapeMode()) {
+				 graph.editorMode = mxResources.get('connectionMode');
+				 graph.showConstraints();
+				 /*Mostro l'highlight del simbolo se ha il contorno come punto d'attacco*/
+				 var cells = graph.getModel().getChildCells(graph.getDefaultParent());
+				 for(i=0; i<cells.length; i++) {
+					 if(cells[i].getAttribute('outlineConstraint','false')=='true') {
+						 cells[i].getHighlightConstraint().highlight(graph.view.getState(cells[i]));
+					 }
+				 }
+				 isEditablePoint = function(cell) {
+						 if(!cell.getAttribute('isConstraint',false)) {
+								 return false;
+						 } else {
+							 if(cell.getStyle().includes('ellipse')) {
+								 return false;
+							 }	else {
+								 return true;
+							 }
+						 }
+				 };
+				 isEditable = function(cell) {
+						 if(!cell.getAttribute('isConstraint',false)) {
+								 return false;
+						 } else {
+								 return true;
+						 }
+				 };
+			} else if(graph.isConstraintMode()) {
+				 graph.editorMode = mxResources.get('shapeMode');
+				 graph.hideConstraints();
+				 /*Nascondo l'highlight del simbolo*/
+				 var cells = graph.getModel().getChildCells(graph.getDefaultParent());
+				 for(i=0; i<cells.length; i++) {
+					 if(cells[i].getAttribute('outlineConstraint','false')=='true') {
+						 cells[i].getHighlightConstraint().hide();
+					 }
+				 }
+				 isEditable = function(cell) {
+						 if(cell.getAttribute('isConstraint',false)) {
+								 return false;
+						 } else {
+								 return true;
+						 }
+				 };
+				 isEditablePoint = isEditable;
 			}
-	 }
+			//Deseleziona tutti i simboli
+			graph.setSelectionCells([]);
+			//Modifica le palette della sidebar
+			this.sidebar.switchPalettes();
+			//Aggiorna la format bar
+			this.format.refresh();
 
-	 EditorUi.prototype.isConnectionMode = function() {
-		 if(this.editorMode == mxResources.get('connectionMode') ) {
-				return true;
-			} else {
-				return false;
-			}
-	 }
-     /**
-	  *	Questa funzione nasconde tutti i punti di attacco
-      */
-	 EditorUi.prototype.hideConstraints = function() {
-		 var cells = this.editor.graph.getModel().getChildCells(this.editor.graph.getDefaultParent());
-		 for(i=0; i<cells.length; i++) {
-			 if(cells[i].getAttribute('isConstraint', false)) {
-				 cells[i].setVisible(false);
-			 }
-		 }
-		 this.editor.graph.refresh();
-	 }
+			graph.isCellEditable = isEditablePoint;
+			graph.isCellMovable = isEditable;
+			graph.isCellRotatable = isEditablePoint;
+			graph.isTerminalPointMovable = isEditable;
+			graph.isCellDeletable = isEditable;
+			graph.isCellCloneable = isEditable;
+			graph.isCellBendable = isEditable;
+			graph.isCellResizable = isEditablePoint;
 
-	 /**
-	  *	Questa funzione mostra tutti i punti di attacco nascosti
-      */
-	 EditorUi.prototype.showConstraints = function() {
-		 var cells = this.editor.graph.getModel().getChildCells(this.editor.graph.getDefaultParent());
-		 for(i=0; i<cells.length; i++) {
-			 if(cells[i].getAttribute('isConstraint', false)) {
-				 cells[i].setVisible(true);
-			 }
-		 }
-		 this.editor.graph.refresh();
-	 }
+	}
+
 	/**
 	 * Hook for subclassers.
 	 */

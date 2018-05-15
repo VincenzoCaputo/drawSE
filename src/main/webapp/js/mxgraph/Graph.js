@@ -888,6 +888,8 @@ Graph = function(container, model, renderHint, stylesheet, themes)
 	}
 };
 
+
+
 /**
  * Specifies if the touch UI should be used (cannot detect touch in FF so always on for Windows/Linux)
  */
@@ -928,7 +930,58 @@ Graph.createSvgImage = function(w, h, data)
  */
 mxUtils.extend(Graph, mxGraph);
 
-Graph.prototype.selectionContainsContraints = function() {
+/**
+ * Specifica la modalità dell'editor (di default la modalità è quella di modifica dei simboli)
+ */
+ Graph.prototype.editorMode = 'Shape Editor Mode';
+
+ Graph.prototype.isShapeMode = function() {
+	 if(this.editorMode == mxResources.get('shapeMode') ) {
+			return true;
+		} else {
+			return false;
+		}
+ }
+
+ Graph.prototype.isConstraintMode = function() {
+	 if(this.editorMode == mxResources.get('connectionMode') ) {
+			return true;
+		} else {
+			return false;
+		}
+ }
+	 /**
+	*	Questa funzione nasconde tutti i punti di attacco
+		*/
+ Graph.prototype.hideConstraints = function() {
+	 var cells = this.getModel().getChildCells(this.getDefaultParent());
+	 for(i=0; i<cells.length; i++) {
+		 if(cells[i].getAttribute('isConstraint', false)) {
+			 cells[i].setVisible(false);
+		 }
+	 }
+	 this.refresh();
+ }
+
+ /**
+	*	Questa funzione mostra tutti i punti di attacco nascosti
+		*/
+ Graph.prototype.showConstraints = function() {
+	 var cells = this.getModel().getChildCells(this.getDefaultParent());
+	 for(i=0; i<cells.length; i++) {
+		 if(cells[i].getAttribute('isConstraint', false)) {
+			 cells[i].setVisible(true);
+		 }
+	 }
+	 this.refresh();
+ }
+
+/**
+ * Questa funzione controlla se la selezione corrente contiene almeno un punto di attacco
+ * @return 	true se la selezione contiene almeno un punto di attacco
+ *					false se la selezione non contiene punti di attacco
+*/
+Graph.prototype.selectionContainsConstraints = function() {
 	if(this.getSelectionCount()==1) {
 		return this.getSelectionCell().getAttribute('isConstraint', false);
 	} else {
@@ -941,6 +994,26 @@ Graph.prototype.selectionContainsContraints = function() {
 		return false;
 	}
 }
+
+/**
+ * Questa funzione controlla se la selezione corrente contiene solo punti di attacco
+ * @return 	true se la selezione contiene solo punti di attacco
+ *					false se la selezione contiene almeno un elemento che non è un punto di attacco
+*/
+Graph.prototype.selectionContainsOnlyConstraints = function() {
+	if(this.getSelectionCount()==1) {
+		return this.getSelectionCell().getAttribute('isConstraint', false);
+	} else {
+		var selectionCells = this.getSelectionCells();
+		for(i=0; i<selectionCells.length; i++) {
+			if(!selectionCells[i].getAttribute('isConstraint', false)) {
+				return false;
+			}
+		}
+		return true;
+	}
+}
+
 
 /**
  * Allows all values in fit.
@@ -5099,8 +5172,8 @@ if (typeof mxVertexHandler != 'undefined')
 								(state != null && !this.isCellLocked(state.cell)))
 							{
 								// Avoids accidental inserts on background
-								if (state != null || (mxClient.IS_VML && src == this.view.getCanvas()) ||
-									(mxClient.IS_SVG && src == this.view.getCanvas().ownerSVGElement))
+								if (this.isShapeMode() && (state != null || (mxClient.IS_VML && src == this.view.getCanvas()) ||
+									(mxClient.IS_SVG && src == this.view.getCanvas().ownerSVGElement)))
 								{
 									cell = this.addText(pt.x, pt.y, state);
 								}
@@ -5109,8 +5182,12 @@ if (typeof mxVertexHandler != 'undefined')
 					}
 				}
 
+				if(this.isConstraintMode()) {
+					cell = this.addConstraintPoint(pt.x, pt.y);
+				}
 				mxGraph.prototype.dblClick.call(this, evt, cell);
 			}
+
 		};
 
 		/**
@@ -5159,6 +5236,40 @@ if (typeof mxVertexHandler != 'undefined')
 		{
 			return false;
 		};
+
+		/**
+			*	Questa funzione aggiunge un punto di attacco al graph, date le coordinate
+			* @param x coordinata x della posizione in cui aggiungere il punto di attacco
+			* @param y coordinata y della posizione in cui aggiungere il punto di attacco
+			*/
+		Graph.prototype.addConstraintPoint = function (x, y) {
+			var point = new mxCell();
+			var doc = mxUtils.createXmlDocument();
+			var node = doc.createElement('AttackSymbol');
+			node.setAttribute('isConstraint', true);
+			node.setAttribute('label', '');
+
+			point.value = node;
+			point.style = 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;';
+			point.geometry = new mxGeometry();
+			point.geometry.width = 5;
+			point.geometry.height = 5;
+			var tr = this.view.translate;
+			point.geometry.x = Math.round(x / this.view.scale) - tr.x;
+			point.geometry.y = Math.round(y / this.view.scale) - tr.y;
+			point.vertex = true;
+			point.connectable = false;
+			this.getModel().beginUpdate();
+			try
+			{
+				this.addCells([point]);
+			}
+			finally
+			{
+				this.getModel().endUpdate();
+			}
+			return point;
+		}
 
 		/**
 		 * Adds a new label at the given position and returns the new cell. State is
