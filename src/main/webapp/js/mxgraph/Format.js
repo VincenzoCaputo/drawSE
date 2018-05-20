@@ -1004,15 +1004,6 @@ BaseFormatPanel.prototype.createColorOption = function(label, getColorFn, setCol
 	div.style.width = '200px';
 	div.style.height = (mxClient.IS_QUIRKS) ? '27px' : '18px';
 
-	var cb = document.createElement('input');
-	cb.setAttribute('type', 'checkbox');
-	cb.style.margin = '0px 6px 0px 0px';
-
-	if (!hideCheckbox)
-	{
-		div.appendChild(cb);
-	}
-
 	var span = document.createElement('span');
 	mxUtils.write(span, label);
 	div.appendChild(span);
@@ -1036,21 +1027,6 @@ BaseFormatPanel.prototype.createColorOption = function(label, getColorFn, setCol
 			{
 				btn.firstChild.style.margin = '0px';
 			}
-
-			if (color != null && color != mxConstants.NONE)
-			{
-				cb.setAttribute('checked', 'checked');
-				cb.defaultChecked = true;
-				cb.checked = true;
-			}
-			else
-			{
-				cb.removeAttribute('checked');
-				cb.defaultChecked = false;
-				cb.checked = false;
-			}
-
-			btn.style.display = (cb.checked || hideCheckbox) ? '' : 'none';
 
 			if (callbackFn != null)
 			{
@@ -1086,32 +1062,7 @@ BaseFormatPanel.prototype.createColorOption = function(label, getColorFn, setCol
 	btn.style.right = (mxClient.IS_QUIRKS) ? '0px' : '20px';
 	btn.style.height = '22px';
 	btn.className = 'geColorBtn';
-	btn.style.display = (cb.checked || hideCheckbox) ? '' : 'none';
 	div.appendChild(btn);
-
-	mxEvent.addListener(div, 'click', function(evt)
-	{
-		var source = mxEvent.getSource(evt);
-
-		if (source == cb || source.nodeName != 'INPUT')
-		{
-			// Toggles checkbox state for click on label
-			if (source != cb)
-			{
-				cb.checked = !cb.checked;
-			}
-
-			// Overrides default value with current value to make it easier
-			// to restore previous value if the checkbox is clicked twice
-			if (!cb.checked && value != null && value != mxConstants.NONE &&
-				defaultColor != mxConstants.NONE)
-			{
-				defaultColor = value;
-			}
-
-			apply((cb.checked) ? defaultColor : mxConstants.NONE);
-		}
-	});
 
 	apply(value, true);
 
@@ -1268,13 +1219,14 @@ BaseFormatPanel.prototype.addCheckBoxInput = function(container, title, checked,
  *	@param right - attributo right dello stile
  *	@param width - attributo width dello stile
  */
-BaseFormatPanel.prototype.addTextInput = function(container, right, width) {
+BaseFormatPanel.prototype.addTextInput = function(container, right, width, content) {
 	var input = document.createElement('input');
 	input.style.textAlign = 'right';
 	input.style.marginTop = '-2px';
 	input.style.right = (right + 12) + 'px';
 	input.style.width = width + 'px';
 	input.style.marginRight = '2px';
+	input.value = content;
 	container.appendChild(input);
 
 	return input;
@@ -1517,15 +1469,102 @@ ArrangePanel.prototype.init = function()
 		this.container.appendChild(this.addGroupOps(this.createPanel()));
 	}
 
-	if(graph.isConstraintMode() && graph.getSelectionCount()==1 && graph.selectionContainsOnlyConstraints()) {
+	if(graph.isConstraintMode() && graph.getSelectionCount()==1 && graph.getSelectionCell().isConstraint() && graph.getSelectionCell().getParent()==graph.getDefaultParent()) {
 		this.container.appendChild(this.addConstraintName(this.createPanel()));
 	}
-
-	if(graph.isConstraintMode() && graph.getSelectionCount()==1 && !graph.selectionContainsOnlyConstraints()) {
+	var selectedCell = graph.getSelectionCell();
+	if(graph.isConstraintMode() && graph.getSelectionCount()==1 && !selectedCell.style.includes('text') && !(selectedCell.isConstraint() && selectedCell.style.includes('ellipse'))) {
 		this.container.appendChild(this.addConstraintPanel(this.createPanel()));
+	}
+
+	if(graph.isConstraintMode() && graph.getSelectionCount()>1) {
+		var selectedCell = graph.getSelectionCells();
+		var countSymbol = 0;
+		for(i=0; i<selectedCell.length && countSymbol<2; i++) {
+			if(!selectedCell[i].isConstraint()) {
+				countSymbol ++;
+			}
+		}
+		if(countSymbol==1) {
+			this.container.appendChild(this.addAttachPanel(this.createPanel()));
+		}
+	}
+
+	if(graph.isConstraintMode() && graph.getSelectionCount()==1) {
+		var selectedCell = graph.getSelectionCell();
+		if(selectedCell.isConstraint() && selectedCell.getParent()!=graph.getDefaultParent()) {
+			this.container.appendChild(this.addDetachPanel(this.createPanel()));
+		}
+	}
+
+	if(graph.getSelectionCount()==1 && !graph.getSelectionCell().isConstraint() && graph.getSelectionCell().isAreaConstraint()) {
+		this.container.appendChild(this.addFill(this.createPanel()));
+	}
+
+	if(graph.getSelectionCount()==1 && !graph.getSelectionCell().isConstraint() && graph.getSelectionCell().isOutlineConstraint()) {
+		this.container.appendChild(this.addStroke(this.createPanel()));
 	}
 };
 
+ArrangePanel.prototype.addFill = function(container) {
+	var ui = this.editorUi;
+	var graph = ui.editor.graph;
+	var ss = this.format.getSelectionState();
+	container.style.paddingTop = '6px';
+	container.style.paddingBottom = '6px';
+
+	var fillKey = (ss.style.shape == 'image') ? mxConstants.STYLE_IMAGE_BACKGROUND : mxConstants.STYLE_FILLCOLOR;
+
+	var fillPanel = this.createCellColorOption(mxResources.get('fill'), fillKey, '#ffffff');
+	fillPanel.style.fontWeight = 'bold';
+
+	container.appendChild(fillPanel);
+
+	// Adds custom colors
+	var custom = this.getCustomColors();
+
+	for (var i = 0; i < custom.length; i++)
+	{
+		container.appendChild(this.createCellColorOption(custom[i].title, custom[i].key, custom[i].defaultValue));
+	}
+
+	return container;
+}
+
+ArrangePanel.prototype.getCustomColors = function()
+{
+	var ss = this.format.getSelectionState();
+	var result = [];
+
+	if (ss.style.shape == 'swimlane')
+	{
+		result.push({title: mxResources.get('laneColor'), key: 'swimlaneFillColor', defaultValue: '#ffffff'});
+	}
+
+	return result;
+};
+
+ArrangePanel.prototype.addStroke = function(container)
+{
+	var ui = this.editorUi;
+	var graph = ui.editor.graph;
+	var ss = this.format.getSelectionState();
+
+	container.style.paddingTop = '4px';
+	container.style.paddingBottom = '4px';
+	container.style.whiteSpace = 'normal';
+
+	var colorPanel = document.createElement('div');
+	colorPanel.style.fontWeight = 'bold';
+
+	var strokeKey = (ss.style.shape == 'image') ? mxConstants.STYLE_IMAGE_BORDER : mxConstants.STYLE_STROKECOLOR;
+
+	var lineColor = this.createCellColorOption(mxResources.get('line'), strokeKey, '#000000');
+	//lineColor.appendChild(styleSelect);
+	colorPanel.appendChild(lineColor);
+	container.appendChild(colorPanel);
+	return container;
+}
 /**
  *
  */
@@ -1808,7 +1847,53 @@ ArrangePanel.prototype.addDistribute = function(div)
 	return div;
 };
 
-ArrangePanel.prototype.addConstraintPanel = function(div) {
+/**
+ *	Pannello per effettuare l'attach
+ */
+ArrangePanel.prototype.addAttachPanel = function(div) {
+	var ui = this.editorUi;
+	var graph = ui.editor.graph;
+	var format = this.format;
+	div.style.paddingBottom = '8px';
+
+	var span = document.createElement('div');
+
+	span.style.width = '70px';
+	span.style.marginTop = '0px';
+	span.style.marginBottom = '2px';
+
+	var btn = mxUtils.button('Attach', function(evt) {
+		var cells = graph.getSelectionCells();
+		var constraints = [];
+		var symbol;
+		for(i=0; i<cells.length; i++) {
+			if(!cells[i].isConstraint()) {
+				symbol = cells[i];
+			} else {
+				if(cells[i].getParent()==graph.getDefaultParent()) { //Se il punto di attacco non è attached
+					constraints.push(cells[i]);
+				}
+			}
+		}
+		var symbolPosition = {x: symbol.getGeometry().x, y: symbol.getGeometry().y};
+		for(i=0; i<constraints.length; i++) {
+			constraints[i].getGeometry().translate(-symbolPosition.x, -symbolPosition.y);
+			graph.getModel().add(symbol, constraints[i]);
+		}
+		graph.getSelectionModel().clear();
+		format.refresh();
+	});
+	span.appendChild(btn);
+	div.appendChild(span);
+
+
+	return div;
+}
+
+/**
+ *	Pannello per il detach
+ */
+ArrangePanel.prototype.addDetachPanel = function(div) {
 	var ui = this.editorUi;
 	var graph = ui.editor.graph;
 	div.style.paddingBottom = '8px';
@@ -1818,39 +1903,56 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 	span.style.width = '70px';
 	span.style.marginTop = '0px';
 	span.style.marginBottom = '2px';
+
+	var btn = mxUtils.button('Detach', function(evt) {
+		var cell = graph.getSelectionCell();
+		var parentPosition = cell.getParent().getGeometry();
+		cell.getGeometry().translate(parentPosition.x, parentPosition.y);
+		graph.getModel().add(graph.getDefaultParent(), cell);
+
+	});
+	span.appendChild(btn);
+	div.appendChild(span);
+
+
+	return div;
+}
+
+ArrangePanel.prototype.addConstraintPanel = function(div) {
+	var ui = this.editorUi;
+	var graph = ui.editor.graph;
+	var selectedCell = graph.getSelectionCell();
+	div.style.paddingBottom = '8px';
+
+	var span = document.createElement('div');
+
+	span.style.width = '70px';
+	span.style.marginTop = '0px';
+	span.style.marginBottom = '2px';
 	span.style.fontWeight = 'bold';
-	if(graph.getSelectionCell().getAttribute('outlineConstraint','false')=='true') {
-		checked = true;
-	} else {
-		checked = false;
+	var checked;
+	if(!selectedCell.isConstraint()) {
+		if(selectedCell.isOutlineConstraint()) {
+			checked = true;
+		} else {
+			checked = false;
+		}
+
+		this.addCheckBoxInput(div, 'Outline constraint', checked, function(evt) {
+				var selectedCell = graph.getSelectionCell();
+				//Imposto l'highlight del simbolo
+				if(evt.target.checked) {
+					selectedCell.addOutlineConstraint();
+				} else {
+					selectedCell.removeOutlineConstraint();
+				}
+				var style = selectedCell.style;
+				style = mxUtils.setStyle(style, mxConstants.STYLE_STROKECOLOR,  selectedCell.outlineConstraintColor);
+				graph.getModel().setStyle(selectedCell, style);
+		});
 	}
 
-	this.addCheckBoxInput(div, 'Outline constraint', checked, function(evt) {
-			var selectedCell = graph.getSelectionCell();
-			var highlight = selectedCell.getHighlightConstraint();
-			//Imposto l'highlight del simbolo
-			if(highlight == null) {
-				highlight = new mxCellHighlight(graph, '#FF0000', 3);
-				selectedCell.setHighlightConstraint(highlight);
-			}
-			if(evt.target.checked) {
-				if(selectedCell.getValue()=='') {
-					var doc = mxUtils.createXmlDocument();
-					var node = doc.createElement('Symbol');
-					//Utilizzo un flag tra le proprietà del simbolo
-					node.setAttribute('outlineConstraint', 'true');
-					selectedCell.setValue(node);
-				} else {
-					selectedCell.setAttribute('outlineConstraint', 'true');
-				}
-        highlight.highlight(graph.view.getState(selectedCell));
-			} else {
-				selectedCell.setAttribute('outlineConstraint', 'false');
-				//Rimuovo l'highlight
-				highlight.hide();
-			}
-	});
-	if(graph.getSelectionCell().getAttribute('areaConstraint','false')=='true') {
+	if(selectedCell.isAreaConstraint()) {
 		checked = true;
 	} else {
 		checked = false;
@@ -1860,33 +1962,16 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 			var selectedCell = graph.getSelectionCell();
 
 			if(evt.target.checked) {
-				if(selectedCell.getValue()=='') {
-					var doc = mxUtils.createXmlDocument();
-					var node = doc.createElement('Symbol');
-					//Utilizzo un flag tra le proprietà del simbolo
-					node.setAttribute('areaConstraint', 'true');
-					selectedCell.setValue(node);
-				} else {
-					selectedCell.setAttribute('areaConstraint', 'true');
-				}
+				selectedCell.addAreaConstraint();
 			} else {
-				selectedCell.setAttribute('areaConstraint', 'false');
+				selectedCell.removeAreaConstraint();
 			}
+			var style = selectedCell.style;
+			style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);
+			graph.getModel().setStyle(selectedCell, style);
 	});
 	return div;
 }
-
-/*Aggiungo un highlight come attributo al mxCell*/
-mxCell.prototype.highlightConstraint = null;
-
-mxCell.prototype.setHighlightConstraint = function(highlight) {
-	this.highlightConstraint = highlight;
-}
-
-mxCell.prototype.getHighlightConstraint = function(highlight) {
-	return this.highlightConstraint;
-}
-/*******/
 
 ArrangePanel.prototype.addConstraintName = function(div) {
 	var ui = this.editorUi;
@@ -1903,12 +1988,13 @@ ArrangePanel.prototype.addConstraintName = function(div) {
 	mxUtils.write(span, 'Name');
 	div.appendChild(span);
 
-	var input = this.addTextInput(div, 20, 120);
+	var input = this.addTextInput(div, 20, 120, graph.getSelectionCell().getAttribute('label',''));
 	var button  = mxUtils.button('Add', function(evt)
 	{
 			var cell = graph.getSelectionCell();
-			cell.setAttribute('constraintName', input.value);
-			input.blur();
+			cell.setAttribute('label', input.value);
+			graph.getSelectionModel().clear();
+			graph.refresh();
 	})
 	div.appendChild(button);
 	return div;

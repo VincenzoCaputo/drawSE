@@ -956,8 +956,17 @@ mxUtils.extend(Graph, mxGraph);
  Graph.prototype.hideConstraints = function() {
 	 var cells = this.getModel().getChildCells(this.getDefaultParent());
 	 for(i=0; i<cells.length; i++) {
-		 if(cells[i].getAttribute('isConstraint', false)) {
+		 if(cells[i].isConstraint()) {
 			 cells[i].setVisible(false);
+		 }
+		 //Nascondo i punti di attacco attached
+		 if(cells[i].children!=null) {
+			 var children = this.getModel().getChildCells(cells[i]);
+			 for(j=0; j<children.length; j++) {
+				 if(children[j].isConstraint()) {
+					 children[j].setVisible(false);
+				 }
+			 }
 		 }
 	 }
 	 this.refresh();
@@ -969,13 +978,137 @@ mxUtils.extend(Graph, mxGraph);
  Graph.prototype.showConstraints = function() {
 	 var cells = this.getModel().getChildCells(this.getDefaultParent());
 	 for(i=0; i<cells.length; i++) {
-		 if(cells[i].getAttribute('isConstraint', false)) {
+		 if(cells[i].isConstraint()) {
 			 cells[i].setVisible(true);
+		 }
+		 //Mostro i punti di attacco attached
+		 if(cells[i].children!=null) {
+			 var children = this.getModel().getChildCells(cells[i]);
+			 for(j=0; j<children.length; j++) {
+				 if(children[j].isConstraint()) {
+					 children[j].setVisible(true);
+				 }
+			 }
 		 }
 	 }
 	 this.refresh();
  }
+/**Override delle funzioni per la modifica dei simboli*/
 
+ Graph.prototype.isCellEditable = function(cell) {
+	 if(cell.style.includes('text') && this.isShapeMode()) {
+		 return true;
+	 } else {
+		 return false;
+	 }
+ };
+
+ Graph.prototype.isCellMovable = function(cell) {
+	 if(this.isConstraintMode()) {
+		 if(!cell.isConstraint()) {
+			 return false;
+		 } else {
+			 if(cell.getParent()!=this.getDefaultParent()) {
+				 return false;
+			 } else {
+				 return true;
+			 }
+		 }
+	 } else {
+		 return true;
+	 }
+ };
+ Graph.prototype.isCellRotatable = function(cell) {
+	 if(this.isConstraintMode()) {
+		 if(!cell.isConstraint()) {
+			 return false;
+		 } else {
+			 if(cell.getStyle().includes('ellipse') || cell.getParent()!=this.getDefaultParent()) {
+				 return false;
+			 } else {
+				 return true;
+			 }
+		 }
+	 } else {
+		 return true;
+	 }
+ };
+ Graph.prototype.isTerminalPointMovable = function(cell) {
+	 if(this.isConstraintMode()) {
+		 if(!cell.isConstraint() || cell.getAttribute('areaConstraint',false)) {
+			 return false;
+		 } else {
+			 if(cell.getParent()!=this.getDefaultParent()) {
+				 return false;
+			 } else {
+				 return true;
+			 }
+		 }
+	 } else {
+		 return true;
+	 }
+ };
+ Graph.prototype.isCellDeletable = function(cell) {
+	 if(this.isConstraintMode()) {
+		 if(!cell.isConstraint()) {
+			 return false;
+		 } else {
+			 if(cell.getParent()!=this.getDefaultParent()) {
+				 return false;
+			 } else {
+				 return true;
+			 }
+		 }
+	 } else {
+		 return true;
+	 }
+ };
+ Graph.prototype.isCellCloneable = function(cell) {
+	 if(this.isConstraintMode()) {
+		 if(!cell.isConstraint()) {
+			 return false;
+		 } else {
+			 if(cell.getParent()!=this.getDefaultParent()) {
+				 return false;
+			 } else {
+				 return true;
+			 }
+		 }
+	 } else {
+		 return true;
+	 }
+ };
+ Graph.prototype.isCellBendable = function(cell) {
+	 if(this.isConstraintMode()) {
+		 if(!cell.isConstraint()) {
+			 return false;
+		 } else {
+			 if(cell.getParent()!=this.getDefaultParent()) {
+				 return false;
+			 } else {
+				 return true;
+			 }
+		 }
+	 } else {
+		 return true;
+	 }
+
+ };
+ mxGraph.prototype.isCellResizable = function(cell) {
+	 if(this.isConstraintMode()) {
+		 if(!cell.isConstraint()) {
+			 return false;
+		 } else {
+			 if(cell.getStyle().includes('ellipse') || cell.getParent()!=this.getDefaultParent()) {
+				 return false;
+			 } else {
+				 return true;
+			 }
+		 }
+	 } else {
+		 return true;
+	 }
+ };
 /**
  * Questa funzione controlla se la selezione corrente contiene almeno un punto di attacco
  * @return 	true se la selezione contiene almeno un punto di attacco
@@ -983,11 +1116,11 @@ mxUtils.extend(Graph, mxGraph);
 */
 Graph.prototype.selectionContainsConstraints = function() {
 	if(this.getSelectionCount()==1) {
-		return this.getSelectionCell().getAttribute('isConstraint', false);
+		return this.getSelectionCell().isConstraint();
 	} else {
 		var selectionCells = this.getSelectionCells();
 		for(i=0; i<selectionCells.length; i++) {
-			if(selectionCells[i].getAttribute('isConstraint', false)) {
+			if(selectionCells[i].isConstraint()) {
 				return true;
 			}
 		}
@@ -1002,11 +1135,11 @@ Graph.prototype.selectionContainsConstraints = function() {
 */
 Graph.prototype.selectionContainsOnlyConstraints = function() {
 	if(this.getSelectionCount()==1) {
-		return this.getSelectionCell().getAttribute('isConstraint', false);
+		return this.getSelectionCell().isConstraint();
 	} else {
 		var selectionCells = this.getSelectionCells();
 		for(i=0; i<selectionCells.length; i++) {
-			if(!selectionCells[i].getAttribute('isConstraint', false)) {
+			if(!selectionCells[i].isConstraint()) {
 				return false;
 			}
 		}
@@ -5246,7 +5379,7 @@ if (typeof mxVertexHandler != 'undefined')
 			var point = new mxCell();
 			var doc = mxUtils.createXmlDocument();
 			var node = doc.createElement('AttackSymbol');
-			node.setAttribute('isConstraint', true);
+			node.setAttribute('isConstraint', 1);
 			node.setAttribute('label', '');
 
 			point.value = node;

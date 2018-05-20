@@ -200,54 +200,46 @@
 	 */
 	EditorUi.prototype.switchMode = function() {
 			var graph = this.editor.graph;
-			var isEditable, isEditablePoint;
 			var connectionMode = graph.isConstraintMode();
 			if(graph.isShapeMode()) {
 				 graph.editorMode = mxResources.get('connectionMode');
 				 graph.showConstraints();
-				 /*Mostro l'highlight del simbolo se ha il contorno come punto d'attacco*/
-				 var cells = graph.getModel().getChildCells(graph.getDefaultParent());
+				 var cells = graph.getModel().filterDescendants(function(cell) {
+					 return !cell.isConstraint() && (cell.vertex || cell.edge);
+				 });
 				 for(i=0; i<cells.length; i++) {
-					 if(cells[i].getAttribute('outlineConstraint','false')=='true') {
-						 cells[i].getHighlightConstraint().highlight(graph.view.getState(cells[i]));
+					 var style = cells[i].style;
+					 if(!style.includes('text')) {
+						 cells[i].setFillColor(graph.getCellStyle(cells[i])[mxConstants.STYLE_FILLCOLOR]);
+						 cells[i].setStrokeColor(graph.getCellStyle(cells[i])[mxConstants.STYLE_STROKECOLOR]);
+
+						 style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  cells[i].areaConstraintColor);
+						 style = mxUtils.setStyle(style, mxConstants.STYLE_STROKECOLOR,  cells[i].outlineConstraintColor);
+					 } else {
+						 style = mxUtils.setStyle(style, mxConstants.STYLE_RESIZABLE,  0);
 					 }
+					 graph.getModel().setStyle(cells[i], style);
 				 }
-				 isEditablePoint = function(cell) {
-						 if(!cell.getAttribute('isConstraint',false)) {
-								 return false;
-						 } else {
-							 if(cell.getStyle().includes('ellipse')) {
-								 return false;
-							 }	else {
-								 return true;
-							 }
-						 }
-				 };
-				 isEditable = function(cell) {
-						 if(!cell.getAttribute('isConstraint',false)) {
-								 return false;
-						 } else {
-								 return true;
-						 }
-				 };
 			} else if(graph.isConstraintMode()) {
-				 graph.editorMode = mxResources.get('shapeMode');
-				 graph.hideConstraints();
-				 /*Nascondo l'highlight del simbolo*/
-				 var cells = graph.getModel().getChildCells(graph.getDefaultParent());
-				 for(i=0; i<cells.length; i++) {
-					 if(cells[i].getAttribute('outlineConstraint','false')=='true') {
-						 cells[i].getHighlightConstraint().hide();
-					 }
-				 }
-				 isEditable = function(cell) {
-						 if(cell.getAttribute('isConstraint',false)) {
-								 return false;
-						 } else {
-								 return true;
-						 }
-				 };
-				 isEditablePoint = isEditable;
+					graph.editorMode = mxResources.get('shapeMode');
+					graph.hideConstraints();
+
+					var cells = graph.getModel().filterDescendants(function(cell) {
+					return !cell.isConstraint() && (cell.vertex || cell.edge);
+					});
+					for(i=0; i<cells.length; i++) {
+					var style = cells[i].style;
+					if(!style.includes('text')) {
+						cells[i].setAreaConstraintColor(graph.getCellStyle(cells[i])[mxConstants.STYLE_FILLCOLOR]);
+						cells[i].setOutlineConstraintColor(graph.getCellStyle(cells[i])[mxConstants.STYLE_STROKECOLOR]);
+
+						style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  cells[i].fillColor);
+						style = mxUtils.setStyle(style, mxConstants.STYLE_STROKECOLOR, cells[i].strokeColor);
+					} else {
+						style = mxUtils.setStyle(style, mxConstants.STYLE_RESIZABLE,  1);
+					}
+					graph.getModel().setStyle(cells[i], style);
+					}
 			}
 			//Deseleziona tutti i simboli
 			graph.setSelectionCells([]);
@@ -255,16 +247,6 @@
 			this.sidebar.switchPalettes();
 			//Aggiorna la format bar
 			this.format.refresh();
-
-			graph.isCellEditable = isEditablePoint;
-			graph.isCellMovable = isEditable;
-			graph.isCellRotatable = isEditablePoint;
-			graph.isTerminalPointMovable = isEditable;
-			graph.isCellDeletable = isEditable;
-			graph.isCellCloneable = isEditable;
-			graph.isCellBendable = isEditable;
-			graph.isCellResizable = isEditablePoint;
-
 	}
 
 	/**
