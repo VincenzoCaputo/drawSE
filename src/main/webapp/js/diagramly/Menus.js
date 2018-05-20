@@ -91,7 +91,7 @@
 			
 			dlg.init();
 		});
-		
+
 		editorUi.actions.put('exportSvg', new Action(mxResources.get('formatSvg') + '...', function()
 		{
 			editorUi.showExportDialog(mxResources.get('formatSvg'), true, mxResources.get('export'),
@@ -240,7 +240,22 @@
 		
 		editorUi.actions.addAction('close', function()
 		{
-			editorUi.fileLoaded(null);
+			var currentFile = editorUi.getCurrentFile();
+			
+			function fn()
+			{
+				editorUi.fileLoaded(null);
+			};
+			
+			if (currentFile != null && currentFile.isModified())
+			{
+				editorUi.confirm(mxResources.get('allChangesLost'), null, fn,
+					mxResources.get('cancel'), mxResources.get('discardChanges'));
+			}
+			else
+			{
+				fn();
+			}
 		});
 		
 		editorUi.actions.addAction('editShape...', mxUtils.bind(this, function()
@@ -318,6 +333,7 @@
 				// Google Drive File
 				else
 				{
+					// TODO: Allow team drives
 					editorUi.drive.executeRequest(gapi.client.drive.revisions.list({'fileId': file.getId()}), function(resp)
 					{
 						editorUi.spinner.stop();
@@ -329,6 +345,7 @@
 								item.getXml = function(success, error)
 								{
 									// Workaround for vanished head revision is to use current head revision from descriptor
+									// TODO: Allow team drives
 									editorUi.drive.executeRequest(gapi.client.drive.revisions.get({'fileId': file.getId(),
 										'revisionId': (resp.items[resp.items.length - 1] === item) ?
 										file.desc.headRevisionId : item.id}), function(resp)
@@ -628,7 +645,7 @@
 
 		editorUi.actions.addAction('keyboardShortcuts...', function()
 		{
-			if (mxClient.IS_CHROMEAPP)
+			if (mxClient.IS_CHROMEAPP || EditorUi.isElectronApp)
 			{
 				editorUi.openLink('https://www.draw.io/shortcuts.svg');
 			}
@@ -812,7 +829,7 @@
 				input.setAttribute('size', '25');
 				input.style.marginLeft = '8px';
 
-				mxEvent.addListener(input, 'keypress', mxUtils.bind(this, function(e)
+				mxEvent.addListener(input, 'keydown', mxUtils.bind(this, function(e)
 				{
 					var term = mxUtils.trim(input.value);
 					
@@ -820,6 +837,7 @@
 					{
 						this.editorUi.openLink('https://desk.draw.io/support/search/solutions?term=' +
 							encodeURIComponent(term));
+						input.value = '';
 						this.editorUi.logEvent({category: 'Help', action: 'search', label: term});
 						
 						if (this.editorUi.menubar != null)
@@ -830,6 +848,10 @@
 							}), 0);
 						}
 					}
+	                else if (e.keyCode == 27)
+	                {
+	                    input.value = '';
+	                }
 				}));
 				
 				item.firstChild.nextSibling.appendChild(input);
@@ -862,7 +884,19 @@
 					this.addMenuItems(menu, ['feedback'], parent);
 				}
 
-				this.addMenuItems(menu, ['support', '-', 'about'], parent);
+				this.addMenuItems(menu, ['support', '-'], parent);
+				
+				if (!editorUi.isOffline() && !navigator.standalone && urlParams['embed'] != '1')
+				{
+					this.addMenuItems(menu, ['download'], parent);
+				}
+				
+				if (!editorUi.isOfflineApp() && urlParams['embed'] != '1')
+				{
+					this.addMenuItems(menu, ['offline'], parent);
+				}
+				
+				this.addMenuItems(menu, ['-', 'about'], parent);
 			}
 
 			if (urlParams['ruler'] == '1')
@@ -2551,17 +2585,6 @@
 				
 			menu.addSeparator(parent);
 			this.addMenuItem(menu, 'tags', parent);
-			menu.addSeparator(parent);
-
-			if (!editorUi.isOffline() && !navigator.standalone && urlParams['embed'] != '1')
-			{
-				this.addMenuItems(menu, ['download'], parent);
-			}
-			
-			if (!editorUi.isOfflineApp() && urlParams['embed'] != '1')
-			{
-				this.addMenuItems(menu, ['offline'], parent);
-			}
 		})));
 
 		this.put('file', new Menu(mxUtils.bind(this, function(menu, parent)
