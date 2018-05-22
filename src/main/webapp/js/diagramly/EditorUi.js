@@ -225,7 +225,7 @@
 					graph.hideConstraints();
 
 					var cells = graph.getModel().filterDescendants(function(cell) {
-					return !cell.isConstraint() && (cell.vertex || cell.edge);
+						return !cell.isConstraint() && (cell.vertex || cell.edge);
 					});
 					for(i=0; i<cells.length; i++) {
 					var style = cells[i].style;

@@ -1501,7 +1501,7 @@ ArrangePanel.prototype.init = function()
 		this.container.appendChild(this.addFill(this.createPanel()));
 	}
 
-	if(graph.getSelectionCount()==1 && !graph.getSelectionCell().isConstraint() && graph.getSelectionCell().isOutlineConstraint()) {
+	if(graph.getSelectionCount()==1 && !graph.getSelectionCell().isConstraint()) {
 		this.container.appendChild(this.addStroke(this.createPanel()));
 	}
 };
@@ -1707,7 +1707,7 @@ ArrangePanel.prototype.addGroupOps = function(div)
 		count++;
 	}
 	//Aggiungo il bottone per creare lo shape
-	if(graph.getSelectionCount() > 1) {
+	if(graph.getSelectionCount() > 0) {
 		if( count > 0) {
 			mxUtils.br(div);
 		}
