@@ -389,7 +389,7 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
     return createLineConstraintNode(shape, curve, groupProp);
   } else if(points.length==3) {
     for(i=0; i<1; i=i+0.02) {
-      var p = this.getPointOnCurve(i, relativeP);
+      var p = this.getPointOnQuadCurve(i, relativeP[0], relativeP[1], relativeP[2]);
       var constraintNode = this.xmlDoc.createElement('constraint');
       constraintNode.setAttribute('x', p.x/groupProp.w);
       constraintNode.setAttribute('y', p.y/groupProp.h);
