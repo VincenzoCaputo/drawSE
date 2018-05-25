@@ -474,7 +474,7 @@ Format.prototype.refresh = function()
 		else
 		{
 			//Se il simbolo selezionato è uno shape il tab style viene mostrato solo se si è nella modalità modifica shape
-			if((graph.isShapeMode() && !graph.selectionContainsConstraints()) || (graph.isConstraintMode() && graph.selectionContainsOnlyConstraints()))  {
+		if((graph.isShapeMode() && !graph.selectionContainsConstraints()) || (graph.isConstraintMode() && graph.selectionContainsOnlyConstraints()))  {
 				label.style.borderLeftWidth = '0px';
 				mxUtils.write(label, mxResources.get('style'));
 				div.appendChild(label);
@@ -1473,7 +1473,7 @@ ArrangePanel.prototype.init = function()
 		this.container.appendChild(this.addConstraintName(this.createPanel()));
 	}
 	var selectedCell = graph.getSelectionCell();
-	if(graph.isConstraintMode() && graph.getSelectionCount()==1 && !selectedCell.style.includes('text') && !(selectedCell.isConstraint() && selectedCell.style.includes('ellipse'))) {
+	if(graph.isConstraintMode() && graph.getSelectionCount()>0 && !selectedCell.style.includes('text') && !(selectedCell.isConstraint() && selectedCell.style.includes('ellipse'))) {
 		this.container.appendChild(this.addConstraintPanel(this.createPanel()));
 	}
 
@@ -1937,7 +1937,6 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 		} else {
 			checked = false;
 		}
-
 		this.addCheckBoxInput(div, 'Outline constraint', checked, function(evt) {
 				var selectedCell = graph.getSelectionCell();
 				//Imposto l'highlight del simbolo
@@ -1959,10 +1958,24 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 	}
 
 	this.addCheckBoxInput(div, 'Area constraint', checked, function(evt) {
-			var selectedCell = graph.getSelectionCell();
+			var selectedCells = graph.getSelectionCells();
 
 			if(evt.target.checked) {
-				selectedCell.addAreaConstraint();
+				//selectedCell.addAreaConstraint();
+				/*var group = graph.groupCells(null, 0, selectedCells);
+
+				group.setFillColor('none');
+				group.setStrokeColor('none');
+				group.setConstraint();
+				graph.getSelectionModel().clear();
+				graph.refresh();*/
+				var shCr = new ShapeCreator(graph);
+				var vertex = shCr.mergeShapes(selectedCells, true, true);
+				vertex.setConstraint();
+				vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_FILLCOLOR, '#CDEB8B'));
+				vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_STROKECOLOR, '#A6FF4C'));
+				vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_OPACITY, '60'));
+				graph.refresh();
 			} else {
 				selectedCell.removeAreaConstraint();
 			}

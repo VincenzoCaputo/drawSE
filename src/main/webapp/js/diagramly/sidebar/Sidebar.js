@@ -650,9 +650,9 @@
 			var lineTags = 'points attack connections ';
 			//Aggiungo un attributo per riconoscere questi simboli come punti di attacco
 			var doc = mxUtils.createXmlDocument();
-			var node = doc.createElement('AttackSymbol');
+		  var node = doc.createElement('AttackSymbol');
+		  node.setAttribute('label', '');
 			node.setAttribute('isConstraint', 1);
-			node.setAttribute('label', '');
 			var fns = [
 				this.addEntry('point', mxUtils.bind(this, function()
 				{

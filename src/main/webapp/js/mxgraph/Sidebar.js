@@ -921,11 +921,11 @@ Sidebar.prototype.addGeneralPalette = function(expand)
 		this.createVertexTemplateEntry('shape=mxgraph.general.rectangle', 100, 100, '', 'Square', null, null, 'Square'),
 		this.createVertexTemplateEntry('shape=mxgraph.general.rectangle', 100, 50, '', 'Rectangle', null, null, 'Rectangle'),
 		this.createVertexTemplateEntry('shape=mxgraph.general.circle', 100, 100, '', 'Circle', null, null, 'Circle'),
-		this.createEdgeTemplateEntry('endArrow=none;rounded=0', 50, 50, '', 'Line', null, lineTags + 'simple undirected plain blank no'),
-		this.createEdgeTemplateEntry('endArrow=none;dashed=1;roundend=0', 50, 50, '', 'Dashed Line', null, lineTags + 'dashed undirected no'),
+		this.createEdgeTemplateEntry('endArrow=none;rounded=0;fillColor=none', 50, 50, '', 'Line', null, lineTags + 'simple undirected plain blank no'),
+		this.createEdgeTemplateEntry('endArrow=none;dashed=1;roundend=0;fillColor=none', 50, 50, '', 'Dashed Line', null, lineTags + 'dashed undirected no'),
 		this.addEntry('curve', mxUtils.bind(this, function()
 		{
-			var cell = new mxCell('', new mxGeometry(0, 0, 50, 50), 'curved=1;endArrow=none;html=1;');
+			var cell = new mxCell('', new mxGeometry(0, 0, 50, 50), 'curved=1;endArrow=none;html=1;fillColor=none;');
 			cell.geometry.setTerminalPoint(new mxPoint(0, 50), true);
 			cell.geometry.setTerminalPoint(new mxPoint(50, 0), false);
 			cell.geometry.points = [new mxPoint(50, 50), new mxPoint(0, 0)];

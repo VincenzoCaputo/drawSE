@@ -27,6 +27,18 @@ mxCell.prototype.isConstraint = function() {
   }
 }
 
+mxCell.prototype.setConstraint = function() {
+  if(this.getValue()=='' || this.getValue()==null) {
+    var node = this.createAttackSymbolXmlNode();
+    node.setAttribute('isConstraint', 1);
+    this.setValue(node);
+    console.log(node);
+  } else {
+    this.setAttribute('isConstraint',1);
+    console.log(this.value);
+  }
+
+}
 /**
  *  Questa funzione restituisce true se il simbolo ha un'area di attacco, false altrimenti
  */
@@ -147,9 +159,55 @@ mxCell.prototype.setOutlineConstraintColor = function(fillColor) {
   this.outlineConstraintColor = fillColor;
 }
 
+mxCell.prototype.createAttackSymbolXmlNode = function() {
+  var doc = mxUtils.createXmlDocument();
+  var node = doc.createElement('AttackSymbol');
+  node.setAttribute('label', '');
+  return node;
+}
+
 mxCell.prototype.createSymbolXmlNode = function() {
   var doc = mxUtils.createXmlDocument();
   var node = doc.createElement('Symbol');
   node.setAttribute('label', '');
   return node;
 }
+
+
+/**
+  Questo metodo restituisce tutti i punti di un mxCell.
+  @return array di punti dell'mxCell.
+*/
+mxCell.prototype.getAllPoints = function() {
+  var pointsArr = new Array();
+  pointsArr.push(this.getGeometry().sourcePoint);
+  var controlPoints = this.getGeometry().points;
+  for(p in controlPoints) {
+    pointsArr.push(controlPoints[p]);
+  }
+  pointsArr.push(this.getGeometry().targetPoint);
+  return pointsArr;
+}
+
+/**
+  Questo metodo restituisce il tipo di mxCell (curva, stencil o linea)
+  @return tipo di mxCell.
+*/
+mxCell.prototype.getShapeType = function() {
+  if(this.getStyle().includes('group')){
+    return this.GROUP_SHAPE_TYPE;
+  } else if(this.getStyle().includes('curved=1')) {
+    return this.CURVE_SHAPE_TYPE;
+  } else if(this.getStyle().includes('shape=')) {
+    return this.STENCIL_SHAPE_TYPE;
+  } else if(this.getStyle().includes('text')) {
+    return this.TEXT_SHAPE_TYPE;
+  }
+  return this.LINE_SHAPE_TYPE;
+}
+
+mxCell.prototype.CURVE_SHAPE_TYPE = 'curve';
+mxCell.prototype.STENCIL_SHAPE_TYPE = 'stencil';
+mxCell.prototype.LINE_SHAPE_TYPE = 'line';
+mxCell.prototype.TEXT_SHAPE_TYPE = 'text';
+mxCell.prototype.GROUP_SHAPE_TYPE = 'group';

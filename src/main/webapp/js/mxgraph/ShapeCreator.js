@@ -1,10 +1,74 @@
 /**
  * Istanzianzione della classe ShapeCreator, che permette di creare uno
- * stencil definito da un documento XML, dato un nome (per lo shape) e il graph
- * di riferimento.
+ * stencil definito da un documento XML, dato il graph di riferimento.
 */
 function ShapeCreator(graph) {
   this.graph = graph;
+}
+
+/**
+  Crea uno Stencil definito da un documento XML dato un array di cells e lo aggiunge al graph.
+  @param cellGroup array di cells
+  @param stroke true se aggiungere lo sfondo alle linee spezzate, false altrimenti
+  @param isPath true per creare un path unico per le linee, false altrimenti
+*/
+ShapeCreator.prototype.mergeShapes = function(cellGroup, stroke, isPath) {
+  var groupProp = this.getSizeAndPosition(cellGroup);
+
+  //Creo il documento XML per lo shape
+  this.xmlDoc = mxUtils.createXmlDocument();
+  //Definisco il tag radice
+  var root = this.xmlDoc.createElement('shape');
+  root.setAttribute('h',groupProp.h);
+  root.setAttribute('w',groupProp.w);
+  root.setAttribute('aspect','fixed');
+  root.setAttribute('strokewidth','inherit');
+  this.xmlDoc.appendChild(root);
+  //Definisco i due tag figli
+  var connectionsNode = this.xmlDoc.createElement('connections');
+  var fgNode = this.xmlDoc.createElement('foreground');
+  fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
+  //Creo un array in cui inserire le celle da raggruppare e che costituiranno lo shape finale
+  var vertex = new Array();
+  if(isPath) { //Per creare un unico path di linee
+    var path = this.getPathXml(cellGroup, groupProp, stroke);
+    fgNode.appendChild(path);
+    fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
+  } else {
+    //Per ogni cella della selezione
+    for(cellIndex in cellGroup) {
+      var shape = cellGroup[cellIndex];
+      var shapeType = shape.getShapeType();
+      if(shapeType == shape.TEXT_SHAPE_TYPE) {
+        vertex.push(shape); //Aggiungo lo shape all'array delle celle da raggruppare
+        delete cellGroup[cellIndex]; //Rimuovo lo shape dal gruppo in modo tale da non eliminarlo dal graph successivamente
+      } else {
+        var nodes = this.getShapeXml(shape, groupProp, stroke);
+        connectionsNode.appendChild(nodes.connNode);
+        fgNode.appendChild(nodes.fgNodes);
+      }
+    }
+
+  }
+  root.appendChild(connectionsNode);
+  root.appendChild(fgNode);
+  var v1;
+  this.graph.getModel().beginUpdate();
+  try {
+    //rappresento lo stencil come base64 per aggiungerlo allo style del mxCell prodotto
+    var xmlBase64 = this.graph.compress(mxUtils.getPrettyXml(root));
+    v1 = this.graph.insertVertex(this.graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
+    //Rimuovo gli elementi che ora fanno parte del simbolo
+    this.graph.removeCells(cellGroup);
+    vertex.push(v1);
+    //Se tra gli elementi è presente del testo, il risultato sarà un gruppo
+    if(vertex.length>1) {
+      this.graph.setSelectionCell(this.graph.groupCells(null, 0, vertex.reverse()));
+    }
+  } finally {
+    this.graph.getModel().endUpdate();
+  }
+  return v1;
 }
 
 /**
@@ -42,40 +106,31 @@ ShapeCreator.prototype.getSizeAndPosition = function (group) {
 }
 
 /**
-  Crea uno Stencil definito da un documento XML dato un array di cells e lo aggiunge al graph.
-  @param cellGroup array di cells
+* Questa funzione produce l'xml di un simbolo, con eventuali punti di attacco legati ad esso
+* @param shape simbolo da tradurre in xml
+* @param groupProp proprietà geometriche del gruppo di elementi originale
+* @param stroke true per aggiungere lo sfondo alle linee, false altrimenti
+* @return oggetto contenente gli elementi del foreground e gli elementi di connections
 */
-ShapeCreator.prototype.mergeShapes = function(cellGroup) {
-  var groupProp = this.getSizeAndPosition(cellGroup);
+ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
+  var shapeType = shape.getShapeType();
+  //Creo dei frammenti in cui inserire gli elementi XML rappresentante il simbolo
+  var fgNode = this.xmlDoc.createDocumentFragment();
+  var constraintNodes = this.xmlDoc.createDocumentFragment();
 
-  //Creo il documento XML per lo shape
-  this.xmlDoc = mxUtils.createXmlDocument();
-  var root = this.xmlDoc.createElement('shape');
-  root.setAttribute('h',groupProp.h);
-  root.setAttribute('w',groupProp.w);
-  root.setAttribute('aspect','fixed');
-  root.setAttribute('strokewidth','inherit');
-  this.xmlDoc.appendChild(root);
-
-  var connectionsNode = this.xmlDoc.createElement('connections');
-
-  var fgNode = this.xmlDoc.createElement('foreground');
-  fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
-  //Creo un array in cui inserire le celle da raggruppare e che costituiranno lo shape finale
-  var vertex = new Array();
-  //Per ogni cella della selezione
-  for(cellIndex in cellGroup) {
-    var shape = cellGroup[cellIndex];
-    //Ricavo il tipo di shape
-    var shapeType = shape.getShapeType();
-
+  //Se il simbolo è un gruppo, rappresento l'area di attacco.
+  if(shapeType == shape.GROUP_SHAPE_TYPE && shape.isConstraint()) {
+    var children = shape.children;
+    var attr = this.getPathXml(children, groupProp, stroke, shape);
+    fgNode.appendChild(attr);
+  } else {
     if(shapeType == shape.LINE_SHAPE_TYPE){
       //Aggiungo un nodo path
       fgNode.appendChild(this.createLineNode(shape, groupProp));
       if(shape.isOutlineConstraint()) {
         connectionsNode.appendChild(this.createLineConstraintNode(shape, shape, groupProp));
       }
-    }else if(shapeType == shape.STENCIL_SHAPE_TYPE) {
+    } else if(shapeType == shape.STENCIL_SHAPE_TYPE) {
       fgNode.appendChild(this.createSubStencilNode(shape, groupProp));
       if(shape.isOutlineConstraint()) {
         connectionsNode.appendChild(this.createStencilOutlineConstraintNode(shape, groupProp));
@@ -85,10 +140,8 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup) {
       if(shape.isOutlineConstraint()) {
         connectionsNode.appendChild(this.createCurveConstraintNode(shape, shape, groupProp));
       }
-    } else if(shapeType == shape.TEXT_SHAPE_TYPE) {
-      vertex.push(shape); //Aggiungo lo shape all'array delle celle da raggruppare
-      delete cellGroup[cellIndex]; //Rimuovo lo shape dal gruppo in modo tale da non eliminarlo dal graph successivamente
     }
+
     if(this.graph.getCellStyle(shape)[mxConstants.STYLE_DASHED]) {
       var dashedNode = this.xmlDoc.createElement('dashed');
       dashedNode.setAttribute('dashed', '1');
@@ -114,19 +167,25 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup) {
 
     //Per il colore di riempimento
     var fillColor=this.graph.getCellStyle(shape)[mxConstants.STYLE_FILLCOLOR];
-    if(fillColor!=null) {
+
+    if(fillColor!=null && stroke==false) {
       var fillColorNode = this.xmlDoc.createElement('fillcolor');
       fillColorNode.setAttribute('color',fillColor);
       fgNode.appendChild(fillColorNode);
-      fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
-    } else {
       fgNode.appendChild(this.xmlDoc.createElement('stroke'));
+    } else if(stroke==false){
+      fgNode.appendChild(this.xmlDoc.createElement('stroke'));
+    } else if(stroke) {
+      fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
     }
 
-    //Aggiungo eventuali punti di attacco attached
-    if(shape.getChildCount()>0) {
-      var attachedPoints = shape.children;
-      for(j=0; j<attachedPoints.length; j++) {
+
+  }
+  //Aggiungo eventuali punti di attacco attached
+  if(shape.getChildCount()>0 && shapeType!=shape.GROUP_SHAPE_TYPE) {
+    var attachedPoints = shape.children;
+    for(j=0; j<attachedPoints.length; j++) {
+      if(attachedPoints[j].isConstraint()) {
         var constraintNode;
         if(attachedPoints[j].style.includes('ellipse')) {
           constraintNode = this.createPointConstraintNode(shape, attachedPoints[j], groupProp);
@@ -136,28 +195,176 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup) {
           } else if(attachedPoints[j].getShapeType() == shape.CURVE_SHAPE_TYPE) {
             constraintNode = this.createCurveConstraintNode(shape, attachedPoints[j], groupProp);
           }
+        } else if(attachedPoints[j].getShapeType() == shape.STENCIL_SHAPE_TYPE) {
+          //Prelevo il base64 che descrive lo stencil e lo traduco in xml
+          var base64 = this.graph.getCellStyle(attachedPoints[j])[mxConstants.STYLE_SHAPE];
+          var desc = this.graph.decompress(base64.substring(8, base64.length-1));
+          //Traduco l'xml (stringa) in oggetto xml
+          var shapeXml = mxUtils.parseXml(desc);
+          //Prelevo il nodo path
+          var foreground = shapeXml.getElementsByTagName('foreground')[0];
+          var paths = foreground.getElementsByTagName('path');
+          //Creo un oggetto canvas, con cui disegnerò l'oggetto descritto nel nodo path
+          var x = document.createElement('canvas');
+          var c = x.getContext('2d');
+          c.beginPath();
+          for(path_index=0; path_index<paths.length; path_index++) {
+            var obj = paths[path_index].childNodes;
+            for(obj_index=0; obj_index<obj.length; obj_index++) {
+              if(obj[obj_index].tagName == 'move') {
+                var x = obj[obj_index].getAttribute('x');
+                var y = obj[obj_index].getAttribute('y');
+                c.moveTo(x,y);
+              } else if(obj[obj_index].tagName == 'line') {
+                var x = obj[obj_index].getAttribute('x');
+                var y = obj[obj_index].getAttribute('y');
+                c.lineTo(x,y);
+              } else if(obj[obj_index].tagName == 'quad') {
+                var x1 = obj[obj_index].getAttribute('x1');
+                var y1 = obj[obj_index].getAttribute('y1');
+                var x2 = obj[obj_index].getAttribute('x2');
+                var y2 = obj[obj_index].getAttribute('y2');
+                c.quadraticCurveTo(x1,y1,x2,y2);
+              }
+            }
+
+          }
+          c.closePath()
+          c.stroke();
+          //Per ogni punto controllo se tale punto è nel path
+          var constraintNode = this.xmlDoc.createDocumentFragment();
+          for(row=0;row<groupProp.w;row=row+5) {
+            for(col=0;col<groupProp.h;col=col+5) {
+              if(c.isPointInPath(row,col,'evenodd') /*&& !c.isPointInStroke(row,col)*/) {
+                var cn = this.xmlDoc.createElement('constraint');
+                var xc, yc;
+                if(shape.edge) {
+                  xc = row;
+                  yc = col;
+                } else {
+                  xc = (attachedPoints[j].getGeometry().x + row);
+                  yc = (attachedPoints[j].getGeometry().y + col);
+                }
+                cn.setAttribute('x', xc/groupProp.w);
+                cn.setAttribute('y', yc/groupProp.h);
+                cn.setAttribute('name','');
+                cn.setAttribute('perimeter',0);
+                constraintNode.appendChild(cn);
+              }
+            }
+          }
         }
-        connectionsNode.appendChild(constraintNode);
+        constraintNodes.appendChild(constraintNode);
       }
     }
   }
-  root.appendChild(connectionsNode);
-  root.appendChild(fgNode);
+  return {connNode: constraintNodes, fgNodes: fgNode};
+}
 
-  this.graph.getModel().beginUpdate();
-  try {
-    var xmlBase64 = this.graph.compress(mxUtils.getPrettyXml(root));
-    var v1 = this.graph.insertVertex(this.graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
-
-    this.graph.removeCells(cellGroup);
-
-    vertex.push(v1);
-    if(vertex.length>1) {
-      this.graph.setSelectionCell(this.graph.groupCells(null, 0, vertex.reverse()));
-    }
-  } finally {
-    this.graph.getModel().endUpdate();
+/**
+* Questa funzione, data una lista di linee, produce un path unico in XML
+*/
+ShapeCreator.prototype.getPathXml = function(lines, groupProp, stroke, parent) {
+  var pathNode = this.xmlDoc.createElement('path');
+  var edges = [];
+  //Creo una struttura dati contenente, per ogni elemento, la lista dei punti
+  for(l_index=0; l_index<lines.length; l_index++) {
+    //lines[l_index].getGeometry().translate(parent.getGeometry().x, parent.getGeometry().y);
+    var allPoints = lines[l_index].getAllPoints();
+    var valueToAdd = {};
+    valueToAdd.type = lines[l_index].getShapeType();
+    valueToAdd.points = allPoints;
+    edges.push(valueToAdd);
   }
+  var nextEdge = 0;
+  var reverse = false;
+  var moveNode = this.xmlDoc.createElement('move');
+  moveNode.setAttribute('x',edges[nextEdge].points[0].x-groupProp.x);
+  moveNode.setAttribute('y',edges[nextEdge].points[0].y-groupProp.y);
+  pathNode.appendChild(moveNode);
+  while(edges[nextEdge]!=null) {
+    var points = edges[nextEdge].points;
+    var pi;
+    var x;
+    var y;
+    //Se il punto iniziale del prossimo elemento coincide con il suo punto di terminazione
+    //devo considerare i punti a partire da quest'ultimo
+    if(reverse == true) {
+      points = points.reverse();
+    }
+    if(edges[nextEdge].type == 'curve' && points.length>2) {
+      if(points.length==3) { //Se la curva ha un solo punto di controllo, uso un nodo quad
+        var quadNode = this.xmlDoc.createElement('quad');
+        quadNode.setAttribute('x1',points[1].x-groupProp.x);
+        quadNode.setAttribute('y1',points[1].y-groupProp.y);
+        quadNode.setAttribute('x2',points[2].x-groupProp.x);
+        quadNode.setAttribute('y2',points[2].y-groupProp.y);
+        pathNode.appendChild(quadNode);
+        x = points[2].x;
+        y = points[2].y;
+      } else {
+        var i;
+        for(pi=1; pi<points.length-2; pi++) {
+          var quadNode = this.xmlDoc.createElement('quad');
+          var xc = (points[pi].x-groupProp.x + points[pi + 1].x-groupProp.x) / 2;
+          var yc = (points[pi].y-groupProp.y + points[pi + 1].y-groupProp.y) / 2;
+          quadNode.setAttribute('x1',points[pi].x-groupProp.x);
+          quadNode.setAttribute('y1',points[pi].y-groupProp.y);
+          quadNode.setAttribute('x2',xc);
+          quadNode.setAttribute('y2',yc);
+          pathNode.appendChild(quadNode);
+        }
+        var quadNode = this.xmlDoc.createElement('quad');
+        quadNode.setAttribute('x1',points[pi].x-groupProp.x);
+        quadNode.setAttribute('y1',points[pi].y-groupProp.y);
+        quadNode.setAttribute('x2',points[pi+1].x-groupProp.x);
+        quadNode.setAttribute('y2',points[pi+1].y-groupProp.y);
+        pathNode.appendChild(quadNode);
+        x = points[pi+1].x;
+        y = points[pi+1].y;
+      }
+    } else if(edges[nextEdge].type == 'line') {
+      for(pi=1; pi<points.length; pi++) {
+        var lineNode = this.xmlDoc.createElement('line');
+        lineNode.setAttribute('x',points[pi].x-groupProp.x);
+        lineNode.setAttribute('y',points[pi].y-groupProp.y);
+        pathNode.appendChild(lineNode);
+      }
+      x = points[pi-1].x;
+      y = points[pi-1].y;
+    }
+    //Elimino l'elemento disegnato dalla struttura dati
+    delete edges[nextEdge];
+    //Cerco il prossimo elemento
+    var value = this.searchPoint(edges, x, y);
+    nextEdge = value.prox;
+    reverse = value.rev;
+  }
+  return pathNode;
+}
+
+
+/**
+* Questa funzione trova il simbolo che ha un'estremità che coincide con i punti x e y
+* @param listE lista di elementi sulla quale effettuare la ricerca
+* @param x coordinata x del punto da cercare
+* @param y coordianta y del punto da cercare
+* @return oggetto contente l'elemento cercato e il reverse, che indica se il punto
+* che coincide con (x,y) è un punto sorgente o di terminazione.
+*/
+ShapeCreator.prototype.searchPoint = function(listE, x, y) {
+  for(ee=0; ee<listE.length; ee++) {
+    if(listE[ee]!=null) {
+      var listP = listE[ee].points;
+      if(listP[0].x == x && listP[0].y == y) {
+        return {prox: ee, rev: false};
+      }
+      if(listP[listP.length-1].x == x && listP[listP.length-1].y == y) {
+        return {prox: ee, rev: true};
+      }
+    }
+  }
+  return -1;
 }
 
 /**
@@ -438,7 +645,6 @@ ShapeCreator.prototype.createStencilOutlineConstraintNode = function(shape, grou
     if(this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE]=='mxgraph.general.rectangle') {
       var x = geo.x-groupProp.x;
       var y = geo.y-groupProp.y;
-      console.log(y);
       for(i=x; i<geo.width; i=i+2) {
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', i/groupProp.w);
@@ -472,7 +678,6 @@ ShapeCreator.prototype.createStencilOutlineConstraintNode = function(shape, grou
       }
     } else if(this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE]=='mxgraph.general.circle') {
       for(i=0; i<4*Math.PI; i=i+0.05) {
-        console.log(i);
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', ((((geo.width/2)*Math.cos(i)))+geo.width/2)/groupProp.w);
         constraintNode.setAttribute('y', ((((geo.height/2)*Math.sin(i)))+geo.height/2)/groupProp.h);
@@ -492,37 +697,3 @@ ShapeCreator.prototype.getPointOnQuadCurve = function(t, p1, p2, p3) {
 	var y = t2 * p1.y + t3 * p2.y + t4 * p3.y;
 	return ({x: x,y: y});
 }
-/**
-  Questo metodo restituisce tutti i punti di un mxCell.
-  @return array di punti dell'mxCell.
-*/
-mxCell.prototype.getAllPoints = function() {
-  var pointsArr = new Array();
-  pointsArr.push(this.getGeometry().sourcePoint);
-  var controlPoints = this.getGeometry().points;
-  for(p in controlPoints) {
-    pointsArr.push(controlPoints[p]);
-  }
-  pointsArr.push(this.getGeometry().targetPoint);
-  return pointsArr;
-}
-
-/**
-  Questo metodo restituisce il tipo di mxCell (curva, stencil o linea)
-  @return tipo di mxCell.
-*/
-mxCell.prototype.getShapeType = function() {
-  if(this.getStyle().includes('curved=1')) {
-    return this.CURVE_SHAPE_TYPE;
-  } else if(this.getStyle().includes('shape=')) {
-    return this.STENCIL_SHAPE_TYPE;
-  } else if(this.getStyle().includes('text')) {
-    return this.TEXT_SHAPE_TYPE;
-  }
-  return this.LINE_SHAPE_TYPE;
-}
-
-mxCell.prototype.CURVE_SHAPE_TYPE = 'curve';
-mxCell.prototype.STENCIL_SHAPE_TYPE = 'stencil';
-mxCell.prototype.LINE_SHAPE_TYPE = 'line';
-mxCell.prototype.TEXT_SHAPE_TYPE = 'text';

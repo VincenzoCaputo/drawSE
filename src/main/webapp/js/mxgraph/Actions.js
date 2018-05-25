@@ -250,7 +250,7 @@ Actions.prototype.init = function()
 	this.addAction('merge', function() {
 			var shapeCreator =new ShapeCreator(graph);
 			var selectionCells = graph.getSelectionCells();
-			shapeCreator.mergeShapes(selectionCells);
+			shapeCreator.mergeShapes(selectionCells, false, false);
 
 	});
 	// Adds action
