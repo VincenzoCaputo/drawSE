@@ -3335,7 +3335,7 @@ TextFormatPanel.prototype.addFont = function(container)
 				node = graph.cellEditor.textarea.firstChild;
 			}
 
-			if (node != null && node != graph.cellEditor.textarea)
+			if (node != null && node != graph.cellEditor.textarea && graph.cellEditor.textarea.contains(node))
 			{
 				node.style.lineHeight = value + '%';
 			}

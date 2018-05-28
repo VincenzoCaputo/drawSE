@@ -1,3 +1,22 @@
+24-MAY-2018: 8.6.8
+
+- Fixes math typesetting in PDF export
+- Fixes NPE in minimal UI
+- Uses mxGraph 3.9.5
+
+23-MAY-2018: 8.6.7
+
+- Adds #S parameter for loading from CSV source
+- Adds support for VSD files in cloud storage
+- Adds Lucidchart support for #U parameter
+
+22-MAY-2018: 8.6.6
+
+- Fixes enabled state for some menu items
+- Moves SQL and PlantUML to insert menu
+- Fixes loading libraries from OneDrive
+- Adds reverse edge to context menu
+
 17-MAY-2018: 8.6.5
 
 - Fixes timing error for export in Safari

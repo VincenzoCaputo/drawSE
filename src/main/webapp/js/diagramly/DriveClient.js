@@ -535,19 +535,13 @@ DriveClient.prototype.updateUser = function(success, error, remember)
 	this.ui.loadUrl(url, mxUtils.bind(this, function(data)
 	{
     	var info = JSON.parse(data);
-    	
-    	// Requests more information about the user
-    	this.executeRequest(gapi.client.drive.about.get(), mxUtils.bind(this, function(resp)
-    	{
-    		this.setUser(new DrawioUser(info.id, resp.user.emailAddress, resp.user.displayName,
-    				(resp.user.picture != null) ? resp.user.picture.url : null, info.locale));
-        	this.setUserId(info.id, remember);
+    	this.setUser(new DrawioUser(info.id, info.email, info.name, info.picture, info.locale));
+    	this.setUserId(info.id, remember);
 
-    		if (success != null)
-			{
-				success();
-			}
-    	}), error);
+		if (success != null)
+		{
+			success();
+		}
 	}), error);
 };
 
@@ -646,7 +640,7 @@ DriveClient.prototype.getFile = function(id, success, error, readXml, readLibrar
 				var binary = /\.png$/i.test(resp.title);
 				
 				// Handles .vsdx, Gliffy and PNG+XML files by creating a temporary file
-				if (/\.vsdx$/i.test(resp.title) || /\.gliffy$/i.test(resp.title) ||
+				if (/\.vsdx?$/i.test(resp.title) || /\.gliffy$/i.test(resp.title) ||
 					(!this.ui.useCanvasForExport && binary))
 				{
 					var url = resp.downloadUrl + '&access_token=' + gapi.auth.getToken().access_token;
@@ -661,7 +655,7 @@ DriveClient.prototype.getFile = function(id, success, error, readXml, readLibrar
 					else
 					{
 						this.loadRealtime(resp, mxUtils.bind(this, function(doc)
-					    	{
+					    {
 							try
 							{
 								// Converts XML files to realtime including old realtime model
@@ -681,7 +675,7 @@ DriveClient.prototype.getFile = function(id, success, error, readXml, readLibrar
 							{
 								error(e);
 							}
-					    	}), error);
+					    }), error);
 					}
 				}
 			}
