@@ -633,8 +633,13 @@
 	Sidebar.prototype.switchPalettes = function() {
 		var graph = this.editorUi.editor.graph;
 		if(graph.isConstraintMode()) {
+			/*var pal;
+			for(pal in this.palettes) {
+				this.showPalette(pal, 'hide');
+			}*/
 			this.removePalette('general');
 		  this.removePalette('Stencil');
+			console.log(this.palettes);
 			this.addAttackPointsPalette(true);
 		} else if(graph.isShapeMode()) {
 			this.removePalette('attack points');
@@ -653,6 +658,11 @@
 		  var node = doc.createElement('AttackSymbol');
 		  node.setAttribute('label', '');
 			node.setAttribute('isConstraint', 1);
+			var nodeArea = doc.createElement('AttackSymbol');
+		  nodeArea.setAttribute('label', '');
+			nodeArea.setAttribute('isConstraint', 1);
+			nodeArea.setAttribute('areaConstraint',1);
+			nodeArea.setAttribute('outlineConstraint',1);
 			var fns = [
 				this.addEntry('point', mxUtils.bind(this, function()
 				{
@@ -665,7 +675,7 @@
 
 				this.addEntry('atckcurve', mxUtils.bind(this, function()
 				{
-					var cell = new mxCell(node, new mxGeometry(0, 0, 50, 50), 'curved=1;endArrow=none;html=1;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=2;opacity=70;');
+					var cell = new mxCell(node, new mxGeometry(0, 0, 50, 50), 'curved=1;endArrow=none;html=1;rotatable=0;resizable=0;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;');
 					cell.geometry.setTerminalPoint(new mxPoint(0, 50), true);
 					cell.geometry.setTerminalPoint(new mxPoint(50, 0), false);
 					cell.geometry.points = [new mxPoint(50, 50), new mxPoint(0, 0)];
@@ -674,11 +684,14 @@
 
 						return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Attack Curve');
 				})),
+				this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'Square', null, null, 'Square'),
+				this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'Circle', null, null, 'Circle'),
 			 ];
 
 			this.addPaletteFunctions('attack points', 'Attack points', (expand != null) ? expand : true, fns);
-			this.palettes['attack points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('rx',5);
-			this.palettes['attack points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('ry',5);
+			//Per rimpicciolire l'anteprima del punto
+			this.palettes['attack points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('rx',3);
+			this.palettes['attack points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('ry',3);
 		}
 
 	/**

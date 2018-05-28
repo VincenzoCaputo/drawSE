@@ -65,7 +65,7 @@ mxCell.prototype.addAreaConstraint = function() {
     this.setAttribute('areaConstraint',1);
   }
   this.areaConstraint = 1;
-  this.setAreaConstraintColor('#CCFF00');
+  this.setAreaConstraintColor('#CDEB8B');
 }
 
 /**

@@ -65,6 +65,7 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup, stroke, isPath) {
     if(vertex.length>1) {
       this.graph.setSelectionCell(this.graph.groupCells(null, 0, vertex.reverse()));
     }
+
   } finally {
     this.graph.getModel().endUpdate();
   }
@@ -85,6 +86,7 @@ ShapeCreator.prototype.getSizeAndPosition = function (group) {
   var minY = cellBounds.y;
 
   //Calcolo le coordinate massime e minime
+  var i;
   for(i=1; i<group.length; i++) {
     var cb = this.graph.view.getState(group[i]).getCellBounds();
 
@@ -128,17 +130,18 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
       //Aggiungo un nodo path
       fgNode.appendChild(this.createLineNode(shape, groupProp));
       if(shape.isOutlineConstraint()) {
-        connectionsNode.appendChild(this.createLineConstraintNode(shape, shape, groupProp));
+        constraintNodes.appendChild(this.createLineConstraintNode(shape, shape, groupProp));
       }
     } else if(shapeType == shape.STENCIL_SHAPE_TYPE) {
+
       fgNode.appendChild(this.createSubStencilNode(shape, groupProp));
       if(shape.isOutlineConstraint()) {
-        connectionsNode.appendChild(this.createStencilOutlineConstraintNode(shape, groupProp));
+        constraintNodes.appendChild(this.createStencilOutlineConstraintNode(shape, groupProp));
       }
     } else if(shapeType == shape.CURVE_SHAPE_TYPE) {
       fgNode.appendChild(this.createCurveNode(shape, groupProp));
       if(shape.isOutlineConstraint()) {
-        connectionsNode.appendChild(this.createCurveConstraintNode(shape, shape, groupProp));
+        constraintNodes.appendChild(this.createCurveConstraintNode(shape, shape, groupProp));
       }
     }
 
@@ -184,6 +187,7 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
   //Aggiungo eventuali punti di attacco attached
   if(shape.getChildCount()>0 && shapeType!=shape.GROUP_SHAPE_TYPE) {
     var attachedPoints = shape.children;
+    var j;
     for(j=0; j<attachedPoints.length; j++) {
       if(attachedPoints[j].isConstraint()) {
         var constraintNode;
@@ -196,62 +200,39 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
             constraintNode = this.createCurveConstraintNode(shape, attachedPoints[j], groupProp);
           }
         } else if(attachedPoints[j].getShapeType() == shape.STENCIL_SHAPE_TYPE) {
-          //Prelevo il base64 che descrive lo stencil e lo traduco in xml
-          var base64 = this.graph.getCellStyle(attachedPoints[j])[mxConstants.STYLE_SHAPE];
-          var desc = this.graph.decompress(base64.substring(8, base64.length-1));
-          //Traduco l'xml (stringa) in oggetto xml
-          var shapeXml = mxUtils.parseXml(desc);
-          //Prelevo il nodo path
-          var foreground = shapeXml.getElementsByTagName('foreground')[0];
-          var paths = foreground.getElementsByTagName('path');
-          //Creo un oggetto canvas, con cui disegnerò l'oggetto descritto nel nodo path
-          var x = document.createElement('canvas');
-          var c = x.getContext('2d');
-          c.beginPath();
-          for(path_index=0; path_index<paths.length; path_index++) {
-            var obj = paths[path_index].childNodes;
-            for(obj_index=0; obj_index<obj.length; obj_index++) {
-              if(obj[obj_index].tagName == 'move') {
-                var x = obj[obj_index].getAttribute('x');
-                var y = obj[obj_index].getAttribute('y');
-                c.moveTo(x,y);
-              } else if(obj[obj_index].tagName == 'line') {
-                var x = obj[obj_index].getAttribute('x');
-                var y = obj[obj_index].getAttribute('y');
-                c.lineTo(x,y);
-              } else if(obj[obj_index].tagName == 'quad') {
-                var x1 = obj[obj_index].getAttribute('x1');
-                var y1 = obj[obj_index].getAttribute('y1');
-                var x2 = obj[obj_index].getAttribute('x2');
-                var y2 = obj[obj_index].getAttribute('y2');
-                c.quadraticCurveTo(x1,y1,x2,y2);
+          if(attachedPoints[j].isAreaConstraint()) {
+            var ctx = this.createCanvas(attachedPoints[j]);
+            //Per ogni punto controllo se tale punto è nel path
+            var constraintNode = this.xmlDoc.createDocumentFragment();
+            var areaWidth = attachedPoints[j].getGeometry().width;
+            var areaHeight = attachedPoints[j].getGeometry().height;
+            var row;
+            var col;
+            for(row=0;row<=areaWidth;row=row+5) {
+              for(col=0;col<=areaHeight;col=col+5) {
+                if(ctx.isPointInPath(row,col,'evenodd') || ctx.isPointInStroke(row,col)) {
+                  var cn = this.xmlDoc.createElement('constraint');
+                  var xc, yc;
+                  if(shape.edge) {
+                    xc = row;
+                    yc = col;
+                  } else {
+                    xc = (attachedPoints[j].getGeometry().x + row);
+                    yc = (attachedPoints[j].getGeometry().y + col);
+                  }
+                  cn.setAttribute('x', xc/groupProp.w);
+                  cn.setAttribute('y', yc/groupProp.h);
+                  cn.setAttribute('name',attachedPoints[j].getAttribute('label',''));
+                  cn.setAttribute('perimeter',0);
+                  constraintNode.appendChild(cn);
+                }
               }
             }
 
-          }
-          c.closePath()
-          c.stroke();
-          //Per ogni punto controllo se tale punto è nel path
-          var constraintNode = this.xmlDoc.createDocumentFragment();
-          for(row=0;row<groupProp.w;row=row+5) {
-            for(col=0;col<groupProp.h;col=col+5) {
-              if(c.isPointInPath(row,col,'evenodd') /*&& !c.isPointInStroke(row,col)*/) {
-                var cn = this.xmlDoc.createElement('constraint');
-                var xc, yc;
-                if(shape.edge) {
-                  xc = row;
-                  yc = col;
-                } else {
-                  xc = (attachedPoints[j].getGeometry().x + row);
-                  yc = (attachedPoints[j].getGeometry().y + col);
-                }
-                cn.setAttribute('x', xc/groupProp.w);
-                cn.setAttribute('y', yc/groupProp.h);
-                cn.setAttribute('name','');
-                cn.setAttribute('perimeter',0);
-                constraintNode.appendChild(cn);
-              }
-            }
+          } else if(attachedPoints[j].isOutlineConstraint()) {
+            attachedPoints[j].getGeometry().x += shape.getGeometry().x;
+            attachedPoints[j].getGeometry().y += shape.getGeometry().y;
+            constraintNode = this.createStencilOutlineConstraintNode(attachedPoints[j], groupProp);
           }
         }
         constraintNodes.appendChild(constraintNode);
@@ -262,12 +243,71 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
 }
 
 /**
+ *  Questa funzione, dato uno shape (oggetto mxCell) produce un elemento canvas
+ *  @return il canvas context che definisce il disegno
+ */
+ShapeCreator.prototype.createCanvas = function(shape) {
+  var geo = shape.getGeometry();
+  //Creo un oggetto canvas, con cui disegnerò l'oggetto descritto nel nodo path
+  var canvasElement = document.createElement('canvas');
+  var c = canvasElement.getContext('2d');
+  //Prelevo il base64 che descrive lo stencil e lo traduco in xml
+  var base64 = this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE];
+  if(!base64.includes('stencil')) {
+    //è un rettangolo
+    if(base64.includes('rectangle')) {
+      c.rect(0, 0, geo.width, geo.height);
+    } //è un ellisse
+    else if(base64.includes('circle')) {
+      c.ellipse(geo.width/2,geo.height/2,geo.width/2,geo.height/2,0,2*Math.PI, false);
+      c.stroke();
+    }
+  } else {
+    var desc = this.graph.decompress(base64.substring(8, base64.length-1));
+    //Traduco l'xml (stringa) in oggetto xml
+    var shapeXml = mxUtils.parseXml(desc);
+    //Prelevo il nodo path
+    var foreground = shapeXml.getElementsByTagName('foreground')[0];
+    var paths = foreground.getElementsByTagName('path');
+    //Disegno l'oggetto in canvas
+    c.beginPath();
+    var path_index;
+    var obj_index;
+    for(path_index=0; path_index<paths.length; path_index++) {
+      var obj = paths[path_index].childNodes;
+      for(obj_index=0; obj_index<obj.length; obj_index++) {
+        if(obj[obj_index].tagName == 'move') {
+          var x = obj[obj_index].getAttribute('x');
+          var y = obj[obj_index].getAttribute('y');
+          c.moveTo(x,y);
+        } else if(obj[obj_index].tagName == 'line') {
+          var x = obj[obj_index].getAttribute('x');
+          var y = obj[obj_index].getAttribute('y');
+          c.lineTo(x,y);
+        } else if(obj[obj_index].tagName == 'quad') {
+          var x1 = obj[obj_index].getAttribute('x1');
+          var y1 = obj[obj_index].getAttribute('y1');
+          var x2 = obj[obj_index].getAttribute('x2');
+          var y2 = obj[obj_index].getAttribute('y2');
+          c.quadraticCurveTo(x1,y1,x2,y2);
+        }
+      }
+
+    }
+    c.closePath()
+    c.stroke();
+  }
+  return c;
+}
+
+/**
 * Questa funzione, data una lista di linee, produce un path unico in XML
 */
 ShapeCreator.prototype.getPathXml = function(lines, groupProp, stroke, parent) {
   var pathNode = this.xmlDoc.createElement('path');
   var edges = [];
   //Creo una struttura dati contenente, per ogni elemento, la lista dei punti
+  var l_index;
   for(l_index=0; l_index<lines.length; l_index++) {
     //lines[l_index].getGeometry().translate(parent.getGeometry().x, parent.getGeometry().y);
     var allPoints = lines[l_index].getAllPoints();
@@ -303,7 +343,7 @@ ShapeCreator.prototype.getPathXml = function(lines, groupProp, stroke, parent) {
         x = points[2].x;
         y = points[2].y;
       } else {
-        var i;
+        var pi;
         for(pi=1; pi<points.length-2; pi++) {
           var quadNode = this.xmlDoc.createElement('quad');
           var xc = (points[pi].x-groupProp.x + points[pi + 1].x-groupProp.x) / 2;
@@ -324,6 +364,7 @@ ShapeCreator.prototype.getPathXml = function(lines, groupProp, stroke, parent) {
         y = points[pi+1].y;
       }
     } else if(edges[nextEdge].type == 'line') {
+      var pi;
       for(pi=1; pi<points.length; pi++) {
         var lineNode = this.xmlDoc.createElement('line');
         lineNode.setAttribute('x',points[pi].x-groupProp.x);
@@ -353,6 +394,7 @@ ShapeCreator.prototype.getPathXml = function(lines, groupProp, stroke, parent) {
 * che coincide con (x,y) è un punto sorgente o di terminazione.
 */
 ShapeCreator.prototype.searchPoint = function(listE, x, y) {
+  var ee;
   for(ee=0; ee<listE.length; ee++) {
     if(listE[ee]!=null) {
       var listP = listE[ee].points;
@@ -386,6 +428,7 @@ ShapeCreator.prototype.createLineNode = function(shape, groupProp) {
   //Se gli angoli delle linee sono arrotondate utilizzo delle curve di bezier quadratiche agli angoli
   if(this.graph.getCellStyle(shape)[mxConstants.STYLE_ROUNDED]=='1') {
     var t = 0.89;
+    var i;
     for(i=1; i<points.length-1; i++) {
       var lineNode = this.xmlDoc.createElement('line');
       lineNode.setAttribute('x',(1-t)*(points[i-1].x-groupProp.x)+t*(points[i].x-groupProp.x));
@@ -403,6 +446,7 @@ ShapeCreator.prototype.createLineNode = function(shape, groupProp) {
     lineNode.setAttribute('y', points[i].y-groupProp.y);
     pathNode.appendChild(lineNode);
   } else {
+    var i;
     for(i=1; i<points.length; i++) {
       var lineNode = this.xmlDoc.createElement('line');
       lineNode.setAttribute('x',points[i].x-groupProp.x);
@@ -505,7 +549,7 @@ ShapeCreator.prototype.createPointConstraintNode = function(shape, point, groupP
 
   constraintNode.setAttribute('x', x);
   constraintNode.setAttribute('y', y);
-  constraintNode.setAttribute('name',point.getAttribute('constraintName',''));
+  constraintNode.setAttribute('name',point.getAttribute('label',''));
   constraintNode.setAttribute('perimeter',0);
 
   return constraintNode;
@@ -514,6 +558,7 @@ ShapeCreator.prototype.createPointConstraintNode = function(shape, point, groupP
 ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupProp) {
   var points = line.getAllPoints();
   var constraintNodes = this.xmlDoc.createDocumentFragment();
+  var i;
   for(i=0; i<points.length-1; i++) {
     var x1 = points[i].x;
     var y1 = points[i].y;
@@ -543,6 +588,7 @@ ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupPro
         y2 = y1;
         y1 = t;
       }
+      var y;
       for(y=y1; y<y2; y=y+2) {
         var constraintNode = this.xmlDoc.createElement('constraint');
         //Se x2=x1 allora il coefficiente angolare non c'è (avremo una linea verticale)
@@ -553,7 +599,7 @@ ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupPro
         }
         constraintNode.setAttribute('x', x/groupProp.w);
         constraintNode.setAttribute('y', y/groupProp.h);
-        constraintNode.setAttribute('name',line.getAttribute('constraintName',''));
+        constraintNode.setAttribute('name',line.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
@@ -563,12 +609,13 @@ ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupPro
         x2 = x1;
         x1 = t;
       }
+      var x;
       for(x=x1; x<x2; x=x+2) {
         var y = m*x+c;
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', x/groupProp.w);
         constraintNode.setAttribute('y', y/groupProp.h);
-        constraintNode.setAttribute('name',line.getAttribute('constraintName',''));
+        constraintNode.setAttribute('name',line.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
@@ -581,6 +628,7 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
   var points = curve.getAllPoints();
   var constraintNodes = this.xmlDoc.createDocumentFragment();
   var relativeP = [];
+  var i;
   for(i=0; i<points.length; i++) {
     var p = {x:0,y:0};
     if(shape.shapeType == mxCell.STENCIL_SHAPE_TYPE) {
@@ -595,12 +643,13 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
   if(points.length==2) {
     return createLineConstraintNode(shape, curve, groupProp);
   } else if(points.length==3) {
+    var i;
     for(i=0; i<1; i=i+0.02) {
       var p = this.getPointOnQuadCurve(i, relativeP[0], relativeP[1], relativeP[2]);
       var constraintNode = this.xmlDoc.createElement('constraint');
       constraintNode.setAttribute('x', p.x/groupProp.w);
       constraintNode.setAttribute('y', p.y/groupProp.h);
-      constraintNode.setAttribute('name',curve.getAttribute('constraintName',''));
+      constraintNode.setAttribute('name',curve.getAttribute('label',''));
       constraintNode.setAttribute('perimeter',0);
       constraintNodes.appendChild(constraintNode);
     }
@@ -609,6 +658,8 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
     var j;
     var prexc = relativeP[0].x;
     var preyc = relativeP[0].y;
+    var j;
+    var i;
     for(j=1; j<points.length-2; j++) {
       for(i=0; i<1; i=i+0.02) {
         var xc = (relativeP[j].x+relativeP[j+1].x)/2;
@@ -617,13 +668,14 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', p.x/groupProp.w);
         constraintNode.setAttribute('y', p.y/groupProp.h);
-        constraintNode.setAttribute('name',curve.getAttribute('constraintName',''));
+        constraintNode.setAttribute('name',curve.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
       prexc = xc;
       preyc = yc;
     }
+    var i;
     for(i=0; i<1; i=i+0.02) {
       var xc = (relativeP[j-1].x+relativeP[j].x)/2;
       var yc = (relativeP[j-1].y+relativeP[j].y)/2;
@@ -631,7 +683,7 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
       var constraintNode = this.xmlDoc.createElement('constraint');
       constraintNode.setAttribute('x', p.x/groupProp.w);
       constraintNode.setAttribute('y', p.y/groupProp.h);
-      constraintNode.setAttribute('name',curve.getAttribute('constraintName',''));
+      constraintNode.setAttribute('name',curve.getAttribute('label',''));
       constraintNode.setAttribute('perimeter',0);
       constraintNodes.appendChild(constraintNode);
     }
@@ -639,49 +691,56 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
   }
 }
 
+/**
+ *  Questa funzione restituisce un frammento XML contenente i punti di attacco sul contorno di uno stencil
+ *  @param shape stencil di cui si vogliono rappresentare in XML i punto di attacco del contorno
+ *  @param groupProp oggetto contenente le informazioni geometriche del gruppo di simboli da trasformare in XML
+ */
 ShapeCreator.prototype.createStencilOutlineConstraintNode = function(shape, groupProp) {
     var geo = shape.getGeometry();
     var constraintNodes = this.xmlDoc.createDocumentFragment();
+    var x = geo.x-groupProp.x;
+    var y = geo.y-groupProp.y;
     if(this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE]=='mxgraph.general.rectangle') {
-      var x = geo.x-groupProp.x;
-      var y = geo.y-groupProp.y;
-      for(i=x; i<geo.width; i=i+2) {
+      var i;
+      for(i=x; i<x+geo.width; i=i+2) {
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', i/groupProp.w);
         constraintNode.setAttribute('y', y/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('constraintName',''));
+        constraintNode.setAttribute('name',shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
 
         constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', i/groupProp.w);
-        constraintNode.setAttribute('y', geo.height/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('constraintName',''));
+        constraintNode.setAttribute('y', (y+geo.height)/groupProp.h);
+        constraintNode.setAttribute('name',shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
-
-      for(i=y; i<geo.height; i=i+2) {
+      var i;
+      for(i=y; i<y+geo.height; i=i+2) {
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', x/groupProp.w);
         constraintNode.setAttribute('y', i/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('constraintName',''));
+        constraintNode.setAttribute('name',shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
 
         constraintNode = this.xmlDoc.createElement('constraint');
-        constraintNode.setAttribute('x', geo.width/groupProp.w);
+        constraintNode.setAttribute('x', (x+geo.width)/groupProp.w);
         constraintNode.setAttribute('y', i/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('constraintName',''));
+        constraintNode.setAttribute('name',shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
     } else if(this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE]=='mxgraph.general.circle') {
+      var i;
       for(i=0; i<4*Math.PI; i=i+0.05) {
         var constraintNode = this.xmlDoc.createElement('constraint');
-        constraintNode.setAttribute('x', ((((geo.width/2)*Math.cos(i)))+geo.width/2)/groupProp.w);
-        constraintNode.setAttribute('y', ((((geo.height/2)*Math.sin(i)))+geo.height/2)/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('constraintName',''));
+        constraintNode.setAttribute('x', (x+(((geo.width/2)*Math.cos(i)))+geo.width/2)/groupProp.w);
+        constraintNode.setAttribute('y', (y+(((geo.height/2)*Math.sin(i)))+geo.height/2)/groupProp.h);
+        constraintNode.setAttribute('name',shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }

@@ -1501,7 +1501,7 @@ ArrangePanel.prototype.init = function()
 		this.container.appendChild(this.addFill(this.createPanel()));
 	}
 
-	if(graph.getSelectionCount()==1 && !graph.getSelectionCell().isConstraint()) {
+	if(graph.getSelectionCount()==1 && (graph.getSelectionCell().isConstraint() || graph.getSelectionCell().isOutlineConstraint())) {
 		this.container.appendChild(this.addStroke(this.createPanel()));
 	}
 };
@@ -1560,7 +1560,6 @@ ArrangePanel.prototype.addStroke = function(container)
 	var strokeKey = (ss.style.shape == 'image') ? mxConstants.STYLE_IMAGE_BORDER : mxConstants.STYLE_STROKECOLOR;
 
 	var lineColor = this.createCellColorOption(mxResources.get('line'), strokeKey, '#000000');
-	//lineColor.appendChild(styleSelect);
 	colorPanel.appendChild(lineColor);
 	container.appendChild(colorPanel);
 	return container;
@@ -1866,6 +1865,7 @@ ArrangePanel.prototype.addAttachPanel = function(div) {
 		var cells = graph.getSelectionCells();
 		var constraints = [];
 		var symbol;
+		var i;
 		for(i=0; i<cells.length; i++) {
 			if(!cells[i].isConstraint()) {
 				symbol = cells[i];
@@ -1931,7 +1931,7 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 	span.style.marginBottom = '2px';
 	span.style.fontWeight = 'bold';
 	var checked;
-	if(!selectedCell.isConstraint()) {
+	if(!selectedCell.isConstraint() && (selectedCell.style.includes('rectangle') || selectedCell.style.includes('circle'))) {
 		if(selectedCell.isOutlineConstraint()) {
 			checked = true;
 		} else {
@@ -1950,39 +1950,40 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 				graph.getModel().setStyle(selectedCell, style);
 		});
 	}
+	if(graph.selectionContainsOnlyConstraints() && graph.selectionContainsOnlyEdges() ||
+	(graph.getSelectionCount()==1 && graph.getSelectionCell().isConstraint() && graph.getSelectionCell().style.includes('shape'))) {
 
-	if(selectedCell.isAreaConstraint()) {
-		checked = true;
-	} else {
-		checked = false;
+		if(selectedCell.isAreaConstraint()) {
+			checked = true;
+		} else {
+			checked = false;
+		}
+
+		this.addCheckBoxInput(div, 'Area constraint', checked, function(evt) {
+				var selectedCells = graph.getSelectionCells();
+
+				if(evt.target.checked) {
+					if(graph.selectionContainsOnlyEdges()) {
+						var shCr = new ShapeCreator(graph);
+						var vertex = shCr.mergeShapes(selectedCells, true, true);
+						vertex.setConstraint();
+						vertex.addAreaConstraint();
+						vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_FILLCOLOR, '#CDEB8B'));
+						vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_STROKECOLOR, '#A6FF4C'));
+						vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_OPACITY, '60'));
+						graph.refresh();
+					} else {
+						selectedCells[0].addAreaConstraint();
+						graph.refresh();
+					}
+				} else {
+					selectedCell.removeAreaConstraint();
+				}
+				var style = selectedCell.style;
+				style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);
+				graph.getModel().setStyle(selectedCell, style);
+		});
 	}
-
-	this.addCheckBoxInput(div, 'Area constraint', checked, function(evt) {
-			var selectedCells = graph.getSelectionCells();
-
-			if(evt.target.checked) {
-				//selectedCell.addAreaConstraint();
-				/*var group = graph.groupCells(null, 0, selectedCells);
-
-				group.setFillColor('none');
-				group.setStrokeColor('none');
-				group.setConstraint();
-				graph.getSelectionModel().clear();
-				graph.refresh();*/
-				var shCr = new ShapeCreator(graph);
-				var vertex = shCr.mergeShapes(selectedCells, true, true);
-				vertex.setConstraint();
-				vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_FILLCOLOR, '#CDEB8B'));
-				vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_STROKECOLOR, '#A6FF4C'));
-				vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_OPACITY, '60'));
-				graph.refresh();
-			} else {
-				selectedCell.removeAreaConstraint();
-			}
-			var style = selectedCell.style;
-			style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);
-			graph.getModel().setStyle(selectedCell, style);
-	});
 	return div;
 }
 
@@ -4282,10 +4283,11 @@ StyleFormatPanel.prototype.addStroke = function(container)
 	var strokeKey = (ss.style.shape == 'image') ? mxConstants.STYLE_IMAGE_BORDER : mxConstants.STYLE_STROKECOLOR;
 
 	var lineColor = this.createCellColorOption(mxResources.get('line'), strokeKey, '#000000');
-	//lineColor.appendChild(styleSelect);
+	if(!graph.selectionContainsConstraints()) {
+		lineColor.appendChild(styleSelect);
+	}
 	colorPanel.appendChild(lineColor);
 	container.appendChild(colorPanel);
-
 	if(graph.isShapeMode()) {
 		// Used if only edges selected
 		var stylePanel = colorPanel.cloneNode(false);

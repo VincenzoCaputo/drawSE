@@ -180,6 +180,7 @@ Toolbar.prototype.init = function()
  * Questa funzione aggiunge un toggle switch button alla toolbar
  */
  Toolbar.prototype.addToggleSwitch = function() {
+
 	var label = document.createElement('label');
 	label.className = 'switch';
 	var inputNode = document.createElement('input');
@@ -188,7 +189,18 @@ Toolbar.prototype.init = function()
 	spanNode.className = 'slider round';
 	label.appendChild(inputNode);
 	label.appendChild(spanNode);
+
+	var divL = document.createElement('div');
+	divL.style.float = 'left';
+	divL.style.margin = '7px';
+	mxUtils.write(divL, 'Shape Editor');
+	var divR = document.createElement('div');
+	divR.style.float = 'left';
+	divR.style.margin = '7px';
+	mxUtils.write(divR, 'Constraint Editor');
+	this.container.appendChild(divL);
 	this.container.appendChild(label);
+	this.container.appendChild(divR);
 
 	var switchEvent = mxUtils.bind(this, function(evt) {
 		this.editorUi.switchMode();

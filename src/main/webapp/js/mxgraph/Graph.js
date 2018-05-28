@@ -1109,6 +1109,24 @@ mxUtils.extend(Graph, mxGraph);
 		 return true;
 	 }
  };
+
+/**
+ *	Questa funzione controlla se la selezione corrente contiene solo edges.
+ *  @return true se la selezione contiene solo edges, false altrimenti
+ */
+Graph.prototype.selectionContainsOnlyEdges = function() {
+	if(this.getSelectionCount()==1) {
+		return this.getSelectionCell().edge;
+	} else {
+		var selectionCells = this.getSelectionCells();
+		for(i=0; i<selectionCells.length; i++) {
+			if(!selectionCells[i].edge) {
+				return false;
+			}
+		}
+		return true;
+	}
+}
 /**
  * Questa funzione controlla se la selezione corrente contiene almeno un punto di attacco
  * @return 	true se la selezione contiene almeno un punto di attacco
