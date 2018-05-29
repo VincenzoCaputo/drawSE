@@ -1931,7 +1931,7 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 	span.style.marginBottom = '2px';
 	span.style.fontWeight = 'bold';
 	var checked;
-	if(!selectedCell.isConstraint() && (selectedCell.style.includes('rectangle') || selectedCell.style.includes('circle'))) {
+	if(!selectedCell.isConstraint() && (selectedCell.style.includes('rectangle') || selectedCell.style.includes('circle') || selectedCell.edge)) {
 		if(selectedCell.isOutlineConstraint()) {
 			checked = true;
 		} else {

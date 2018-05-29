@@ -633,18 +633,19 @@
 	Sidebar.prototype.switchPalettes = function() {
 		var graph = this.editorUi.editor.graph;
 		if(graph.isConstraintMode()) {
-			/*var pal;
+			var pal;
 			for(pal in this.palettes) {
-				this.showPalette(pal, 'hide');
-			}*/
-			this.removePalette('general');
-		  this.removePalette('Stencil');
-			console.log(this.palettes);
+				this.showPalette(pal, false);
+			}
 			this.addAttackPointsPalette(true);
+			document.getElementById('newPaletteButton').style.display = 'none';
 		} else if(graph.isShapeMode()) {
-			this.removePalette('attack points');
-			this.addGeneralPalette(true);
-			this.addStencilPalette('Stencil', 'Stencil', STENCIL_PATH+'/stencil.xml',';html=1;');
+			var pal;
+			for(pal in this.palettes) {
+				this.showPalette(pal, true);
+			}
+			this.showPalette('attack points', false);
+			document.getElementById('newPaletteButton').style.display = 'block';
 		}
 	}
 
@@ -726,6 +727,7 @@
 				editor.loadLibrary(new StorageLibrary(editor, emptyXml, title));
 			}
 		});
+		addNewPaletteButton.id = 'newPaletteButton';
 		addNewPaletteButton.style.display = ' block';
 		addNewPaletteButton.style.margin = '10px auto 10px auto';
 		addNewPaletteButton.style.width = '75%';

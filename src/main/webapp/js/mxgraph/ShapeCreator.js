@@ -202,6 +202,15 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
         } else if(attachedPoints[j].getShapeType() == shape.STENCIL_SHAPE_TYPE) {
           if(attachedPoints[j].isAreaConstraint()) {
             var ctx = this.createCanvas(attachedPoints[j]);
+            var relX;
+            var relY;
+            if(shape.edge) {
+              relX = attachedPoints[j].getGeometry().x - groupProp.x;
+              relY = attachedPoints[j].getGeometry().y - groupProp.y;
+            } else {
+              relX = attachedPoints[j].getGeometry().x + shape.getGeometry().x - groupProp.x;
+              relY = attachedPoints[j].getGeometry().y + shape.getGeometry().y - groupProp.y;
+            }
             //Per ogni punto controllo se tale punto è nel path
             var constraintNode = this.xmlDoc.createDocumentFragment();
             var areaWidth = attachedPoints[j].getGeometry().width;
@@ -212,16 +221,16 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
               for(col=0;col<=areaHeight;col=col+5) {
                 if(ctx.isPointInPath(row,col,'evenodd') || ctx.isPointInStroke(row,col)) {
                   var cn = this.xmlDoc.createElement('constraint');
-                  var xc, yc;
+                  /*var xc, yc;
                   if(shape.edge) {
                     xc = row;
                     yc = col;
                   } else {
                     xc = (attachedPoints[j].getGeometry().x + row);
                     yc = (attachedPoints[j].getGeometry().y + col);
-                  }
-                  cn.setAttribute('x', xc/groupProp.w);
-                  cn.setAttribute('y', yc/groupProp.h);
+                  }*/
+                  cn.setAttribute('x', (relX+row)/groupProp.w);
+                  cn.setAttribute('y', (relY+col)/groupProp.h);
                   cn.setAttribute('name',attachedPoints[j].getAttribute('label',''));
                   cn.setAttribute('perimeter',0);
                   constraintNode.appendChild(cn);
@@ -479,8 +488,8 @@ ShapeCreator.prototype.createSubStencilNode = function(shape, groupProp) {
   includeShapeNode.setAttribute('x', shapeState.origin.x-groupProp.x);
   includeShapeNode.setAttribute('y', shapeState.origin.y-groupProp.y);
 
-  includeShapeNode.setAttribute('w', shapeState.width);
-  includeShapeNode.setAttribute('h', shapeState.height);
+  includeShapeNode.setAttribute('w', shapeState.cellBounds.width);
+  includeShapeNode.setAttribute('h', shapeState.cellBounds.height);
 
   return includeShapeNode;
 }
