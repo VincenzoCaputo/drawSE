@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project basedir="." default="all">
-	
+
 	<property file="build.properties.local" />
 	<property file="build.properties" />
 	<taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask" classpath="${jscompiler}" />
@@ -10,29 +10,29 @@
 	    		<fileset dir="${war.dir}/shapes" includes="**/*.js"/>
 	    		<fileset dir="${war.dir}/stencils" includes="**/*.js"/>
 	    	</concat>
-    	
+
 		<java fork="false" classname="Xml2Js" classpath=".">
 			<arg value="../../src/main/webapp/stencils"/>
 			<arg value="../../src/main/webapp/js/stencils.min.js"/>
 		</java>
-		
+
 		<jscomp compilationLevel="simple" debug="false" forceRecompile="true" output="${war.dir}/js/shapes.min.js">
 			<sources dir="${basedir}/../../build">
 				<file name="shapes.js" />
 			</sources>
 		</jscomp>
-		
+
 		<tstamp>
       		<format property="time.stamp" pattern="MM/dd/yyyy hh:mm aa" unit="hour"/>
   		</tstamp>
-		
+
 		<echo file="${war.dir}/cache.manifest" append="false">CACHE MANIFEST${line.separator}${line.separator}</echo>
 		<echo file="${war.dir}/cache.manifest" append="true"># THIS FILE WAS GENERATED. DO NOT MODIFY!${line.separator}</echo>
 		<echo file="${war.dir}/cache.manifest" append="true"># ${time.stamp}${line.separator}${line.separator}</echo>
 	    	<concat destfile="${war.dir}/cache.manifest" fixlastline="yes" append="true">
 	    		<filelist dir="${basedir}" files="cache.txt"/>
 	    	</concat>
-    	
+
 		<delete dir="${basedir}/../../build"/>
 	</target>
 
@@ -50,7 +50,7 @@
 		<replaceregexp file="${basedir}/.tmp1.xml" match="${line.separator}" flags="g" replace=""/>
 		<replaceregexp file="${basedir}/.tmp1.xml" match="\t" flags="g" replace=""/>
 		<replaceregexp file="${basedir}/.tmp1.xml" match="'" flags="g" replace="\\\\'" byline="true"/>
-		
+
 		<delete file="${basedir}/Graph-Stylesheet.js"/>
 		<echo file="${basedir}/Graph-Stylesheet.js">Graph.prototype.defaultThemes[Graph.prototype.defaultThemeName] = mxUtils.parseXml('</echo>
 		<concat destfile="${basedir}/Graph-Stylesheet.js" fixlastline="no" append="true">
@@ -70,19 +70,19 @@
     		</concat>
 		<echo file="${basedir}/Graph-Stylesheet.js" append="true">').documentElement;</echo>
 
-		
+
 		<delete file="${basedir}/.tmp2.js"/>
 		<copy file="${war.dir}/resources/dia.txt" tofile="${basedir}/.tmp2.xml" overwrite="true"/>
 		<replaceregexp file="${basedir}/.tmp2.xml" match="${line.separator}" flags="g" replace="\\\\n"/>
 		<replaceregexp file="${basedir}/.tmp2.xml" match="'" flags="g" replace="\\\\'" byline="true"/>
-		
+
 		<delete file="${basedir}/Graph-Resources.js"/>
 		<echo file="${basedir}/Graph-Resources.js">mxResources.parse('</echo>
 		<concat destfile="${basedir}/Graph-Resources.js" fixlastline="no" append="true">
 			<filelist dir="${basedir}" files=".tmp2.xml"/>
     		</concat>
 		<echo file="${basedir}/Graph-Resources.js" append="true">');</echo>
-		
+
 		<jscomp compilationLevel="simple" forceRecompile="true" debug="false" output="${basedir}/grapheditor.min.js">
 			<sources dir="${grapheditor.dir}">
 				<file name="Editor.js" />
@@ -95,9 +95,10 @@
 				<file name="Menus.js" />
 				<file name="Toolbar.js" />
 				<file name="Dialogs.js" />
+				<file name="ShapeCreator.js" />
 			</sources>
 		</jscomp>
-		
+
 		<jscomp compilationLevel="simple" debug="false" forceRecompile="true" output="${basedir}/sidebar.min.js">
 			<sources dir="${war.dir}/js/diagramly/sidebar">
 				<file name="Sidebar.js" />
@@ -141,7 +142,7 @@
 				<file name="Sidebar-WebIcons.js" />
 			</sources>
 		</jscomp>
-		
+
 		<jscomp compilationLevel="simple" debug="false" forceRecompile="true" output="${basedir}/client.min.js">
 			<sources dir="${war.dir}/js/deflate">
 				<file name="base64.js" />
@@ -158,7 +159,7 @@
 			<sources dir="${basedir}/../mxgraph">
 				<file name="mxClient.js" />
 			</sources>
-			
+
 			<sources dir="${war.dir}/js/jscolor">
 				<file name="jscolor.js" />
 			</sources>
@@ -169,7 +170,7 @@
 				<file name=".tmp0.js"/>
 			</sources>
 		</jscomp>
-			
+
 		<jscomp compilationLevel="simple" forceRecompile="true" debug="false" output="${basedir}/.tmp1.js">
 			<sources dir="${grapheditor.dir}">
 				<file name="Editor.js" />
@@ -178,7 +179,7 @@
 				<file name="Shapes.js" />
 				<file name="Actions.js" />
 			</sources>
-			
+
 			<sources dir="${war.dir}/js/diagramly">
 				<file name="DrawioFile.js" />
 				<file name="LocalFile.js" />
@@ -187,8 +188,9 @@
 				<file name="Pages.js" />
 				<file name="Trees.js" />
 				<file name="Minimal.js" />
+				<file name="Cell.js" />
 			</sources>
-					
+
 			<sources dir="${basedir}">
 				<file name="Graph-Resources.js" />
 				<file name="Graph-Stylesheet.js" />
@@ -198,7 +200,7 @@
 				<file name="GraphViewer.js" />
 			</sources>
 		</jscomp>
-		
+
 		<concat destfile="${basedir}/base-viewer.min.js" fixlastline="yes" append="no">
 			<filelist dir="${basedir}" files=".tmp0.min.js"/>
 			<filelist dir="${war.dir}/js/spin" files="spin.min.js"/>
@@ -212,7 +214,7 @@
 			{
 				Editor.initMath();
 				GraphViewer.initCss();
-				
+
 				if (window.onDrawioViewerLoad != null)
 				{
 					window.onDrawioViewerLoad();
@@ -223,13 +225,13 @@
 				}
 			})();
 		</echo>
-		
+
 		<jscomp compilationLevel="simple" forceRecompile="true" debug="false" output="${basedir}/.tmp2.min.js">
 			<sources dir="${basedir}">
 				<file name=".tmp2.js"/>
 			</sources>
 		</jscomp>
-		
+
 		<concat destfile="${war.dir}/js/viewer.min.js" fixlastline="yes" append="no">
 			<filelist dir="${basedir}" files="base-viewer.min.js,.tmp2.min.js"/>
     		</concat>
@@ -260,13 +262,14 @@
 				<file name="Pages.js" />
 				<file name="Trees.js" />
 				<file name="Minimal.js" />
+				<file name="Cell.js" />
 			</sources>
-				
+
 			<sources dir="${basedir}">
 				<file name="Graph-Stylesheet.js" />
 			</sources>
 		</jscomp>
-			
+
 		<concat destfile="${basedir}/base.min.js" fixlastline="yes" append="no">
 			<filelist dir="${war.dir}/js/spin" files="spin.min.js"/>
 			<filelist dir="${war.dir}/js/sanitizer" files="sanitizer.min.js"/>
@@ -276,7 +279,7 @@
 
 		<loadfile property="version" srcFile="../../VERSION"/>
 		<replace file="${basedir}/base.min.js" token="@DRAWIO-VERSION@" value="${version}"/>
-		
+
 		<jscomp compilationLevel="simple" debug="false" forceRecompile="true" output="${war.dir}/js/extensions.min.js">
 			<sources dir="${war.dir}/js/diagramly">
 				<file name="Extensions.js" />
@@ -291,9 +294,9 @@
 		<concat destfile="${war.dir}/js/extensions.min.js" fixlastline="yes" append="yes">
 	    		<fileset dir="${war.dir}/js/jszip" includes="**/*.min.js"/>
 	    	</concat>
-		
+
 		<delete file="${basedir}/.tmp1.js"/>
-		
+
 		<jscomp compilationLevel="simple" debug="false" forceRecompile="true" output="${basedir}/.tmp1.js">
 			<sources dir="${war.dir}/js/diagramly">
 				<file name="DrawioFile.js" />
@@ -306,8 +309,9 @@
 				<file name="Editor.js" />
 				<file name="EditorUi.js" />
 				<file name="Settings.js" />
+				<file name="Cell.js" />
 			</sources>
-				
+
 			<sources dir="${basedir}">
 				<file name="Graph-Stylesheet.js" />
 			</sources>
@@ -339,7 +343,7 @@
 				<file name="TrelloClient.js" />
 				<file name="ChatWindow.js" />
 			</sources>
-			
+
 			<sources dir="${war.dir}/js/diagramly">
 				<file name="App.js" />
 				<file name="Menus.js" />
@@ -393,7 +397,7 @@
 		<delete file="${basedir}/base.min.js"/>
 		<delete file="${basedir}/base-viewer.min.js"/>
 	</target>
-	
+
 	<target name="war" depends="javac" description="Create the stand-alone war file">
 		<zip destfile="${build.dir}/${war.name}" basedir="${war.dir}" >
 		</zip>
