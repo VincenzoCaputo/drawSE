@@ -934,7 +934,7 @@ Sidebar.prototype.addGeneralPalette = function(expand)
 
 				return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Curve');
 		})),
-		this.createVertexTemplateEntry('text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;',
+		this.createVertexTemplateEntry('text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;overflow=hidden;',
  			40, 20, 'Text', 'Text', null, null, 'text textbox textarea label', 100, 100, '', 'Text', null, null, 'Text'),
 	 ];
 

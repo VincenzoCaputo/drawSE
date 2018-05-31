@@ -253,6 +253,31 @@ Actions.prototype.init = function()
 			shapeCreator.mergeShapes(selectionCells, false, false);
 
 	});
+	this.addAction('unmerge', function() {
+			var shapeCreator =new ShapeCreator(graph);
+			var selectionCell = graph.getSelectionCells()[0];
+			var cellToTransform;
+			/*
+				Se è un gruppo, cerco il simbolo da trasformare
+			*/
+			if(selectionCell.style.includes('group')) {
+				var childCells = graph.ungroupCells();
+				var textNodes = [];
+				var i;
+				for(i=0; i<childCells.length; i++) {
+					if(childCells[i].style.includes('shape=')) {
+						cellToTransform = childCells[i];
+					} else {
+						textNodes.push(childCells[i]);
+					}
+				}
+			} else {
+				cellToTransform = selectionCell;
+			}
+			shapeCreator.unmergeShape(cellToTransform);
+			//Porto in avanti il testo per renderlo visibile
+			graph.orderCells(false, textNodes);
+	});
 	// Adds action
 	this.addAction('edit', function()
 	{

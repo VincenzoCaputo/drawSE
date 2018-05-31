@@ -56,7 +56,7 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup, stroke, isPath) {
   this.graph.getModel().beginUpdate();
   try {
     //rappresento lo stencil come base64 per aggiungerlo allo style del mxCell prodotto
-    var xmlBase64 = this.graph.compress(mxUtils.getPrettyXml(root));
+    var xmlBase64 = this.graph.compress(mxUtils.getXml(root));
     v1 = this.graph.insertVertex(this.graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
     //Rimuovo gli elementi che ora fanno parte del simbolo
     this.graph.removeCells(cellGroup);
@@ -149,7 +149,7 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
       var dashedNode = this.xmlDoc.createElement('dashed');
       dashedNode.setAttribute('dashed', '1');
       fgNode.appendChild(dashedNode);
-      var dashedPattern = this.graph.getCellStyle(shape)[mxConstants.STYLE_FIX_DASH];
+      var dashedPattern = this.graph.getCellStyle(shape)['dashPattern'];
       if(dashedPattern!=null) {
         var dashPatternNode = this.xmlDoc.createElement('dashpattern');
         dashPatternNode.setAttribute('pattern', dashedPattern);
@@ -175,7 +175,7 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
       var fillColorNode = this.xmlDoc.createElement('fillcolor');
       fillColorNode.setAttribute('color',fillColor);
       fgNode.appendChild(fillColorNode);
-      fgNode.appendChild(this.xmlDoc.createElement('stroke'));
+      fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
     } else if(stroke==false){
       fgNode.appendChild(this.xmlDoc.createElement('stroke'));
     } else if(stroke) {
@@ -558,7 +558,7 @@ ShapeCreator.prototype.createPointConstraintNode = function(shape, point, groupP
 
   constraintNode.setAttribute('x', x);
   constraintNode.setAttribute('y', y);
-  constraintNode.setAttribute('name',point.getAttribute('label',''));
+  constraintNode.setAttribute('name',point.getAttribute('label','P'+point.id));
   constraintNode.setAttribute('perimeter',0);
 
   return constraintNode;
@@ -764,4 +764,213 @@ ShapeCreator.prototype.getPointOnQuadCurve = function(t, p1, p2, p3) {
 	var x = t2 * p1.x + t3 * p2.x + t4 * p3.x;
 	var y = t2 * p1.y + t3 * p2.y + t4 * p3.y;
 	return ({x: x,y: y});
+}
+
+
+
+ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
+  var geoCell = cellToTransform.getGeometry();
+  var stencil = this.graph.getCellStyle(cellToTransform)[mxConstants.STYLE_SHAPE];
+  var shapeXml;
+  //Se lo stencil è definito in base64, effettuo il decode per ottenere l'xml
+  if(stencil.includes('stencil(')) {
+    var base64 = stencil.substring(8, stencil.length-1);
+    var desc = this.graph.decompress(base64);
+    shapeXml = mxUtils.parseXml(desc);
+  } else {
+    /*
+    Se lo stencil è definito da un nome, allora è presente nello mxStencilRegistry.
+    Da lì posso ottenere l'xml.
+    */
+    shapeXml = mxStencilRegistry.getStencil(stencil).desc;
+  }
+  var cellsToAdd = []; //Lista dei simboli componenti da aggiungere all'editor
+  var lastCells = []; //Simboli inserite nell'ultima iterazione (necessario per modificare lo stile)
+
+  var connectionsNode = shapeXml.getElementsByTagName('connections')[0];
+  var connectionChildNodes = this.getAllElementChildNodes(connectionsNode);
+  var i;
+  for(i=0; i<connectionChildNodes.length; i++) {
+    var node = connectionChildNodes[i];
+    if(node.tagName == 'constraint' && node.getAttribute('name').includes('P')) {
+      var x = node.getAttribute('x')*geoCell.width+geoCell.x;
+      var y = node.getAttribute('y')*geoCell.height+geoCell.y;
+      var doc = mxUtils.createXmlDocument();
+      var node = doc.createElement('AttackSymbol');
+		  node.setAttribute('label', '');
+			node.setAttribute('isConstraint', 1);
+      var cell = new mxCell(node, new mxGeometry(x, y, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
+      cell.vertex = true;
+      cell.connectable = false;
+      cellsToAdd.push(cell);
+    }
+  }
+
+
+  var foregroundNode = shapeXml.getElementsByTagName('foreground')[0];
+  var foregroundChildNodes = this.getAllElementChildNodes(foregroundNode);
+
+
+  var i;
+  for(i=0; i<foregroundChildNodes.length; i++) {
+    var node = foregroundChildNodes[i];
+
+    var groupProp;
+    if(node.tagName == 'rect') {
+      lastCells = [];
+      var cell = new mxCell();
+      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
+      cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, 'mxgraph.general.rectangle');
+      cell.vertex = true;
+      cellsToAdd.push(cell);
+      lastCells.push(cell);
+    } else if(node.tagName == 'ellipse') {
+      lastCells = [];
+      var cell = new mxCell();
+      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
+      cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, 'mxgraph.general.circle');
+      cell.vertex = true;
+      cellsToAdd.push(cell);
+      lastCells.push(cell);
+    } else if(node.tagName == 'path') {
+      lastCells = [];
+      var pathNodes = this.getAllElementChildNodes(node);
+
+      var sourcePoint;
+      var controlPoint = [];
+      var terminalPoint;
+
+      var currentPoint;
+      var prevPoint;
+
+      var isLine = false;
+      var isCurve = false;
+
+      var j;
+      for(j=0; j<pathNodes.length; j++) {
+
+        if(pathNodes[j].tagName == 'move') {
+          currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x'))+geoCell.x, Number(pathNodes[j].getAttribute('y'))+geoCell.y);
+        } else if(pathNodes[j].tagName == 'line') {
+          currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x'))+geoCell.x, Number(pathNodes[j].getAttribute('y'))+geoCell.y);
+          /*Se stavo già disegnando una linea, allora il punto precedente è un contol point
+            altrimenti il punto precedente è il punto sorgente. (Nota: il nodo xml line indica tra gli attributi
+            SOLO il punto finale)
+          */
+          if(!isLine) {
+            isLine = true;
+            sourcePoint = prevPoint;
+            controlPoint = [];
+          }
+          /*Se il nodo successivo descrive una linea allora il punto corrente è un control point
+            altrimenti è il punto terminale.
+          */
+         if(j<pathNodes.length-1 && pathNodes[j+1].tagName == 'line') {
+            controlPoint.push(currentPoint);
+          } else {
+            terminalPoint = currentPoint;
+            isLine = false;
+            var cell = new mxCell();
+            var newGeo = new mxGeometry();
+            newGeo.sourcePoint = sourcePoint;
+            newGeo.points = controlPoint;
+            newGeo.targetPoint = terminalPoint;
+            cell.setGeometry(newGeo);
+            cell.style = 'endArrow=none;curved=0;rounded=0;';
+            cell.edge = true;
+            cellsToAdd.push(cell);
+            lastCells.push(cell);
+          }
+        } else if(pathNodes[j].tagName == 'quad') {
+          var point1 = new mxPoint(Number(pathNodes[j].getAttribute('x1'))+geoCell.x, Number(pathNodes[j].getAttribute('y1'))+geoCell.y);
+          currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x2'))+geoCell.x, Number(pathNodes[j].getAttribute('y2'))+geoCell.y);
+          /*
+          * Se isCurve è false allora questo è il primo tag riferito alla curva.
+          * Il punto sorgente è il precedente, mentre le due coordinate definite dal tag corrente
+          * individuano due punti di controllo
+          */
+          if(!isCurve) {
+            isCurve = true;
+            controlPoint = [];
+            sourcePoint = prevPoint;
+            controlPoint.push(point1);
+          }
+          /*
+            Se il prossimo tag descrive una curva, allora il secondo punto del tag corrente (ossia currentPoint)
+            è un punto di controllo. Altrimenti il currentPoint è il punto terminale.
+          */
+          if(j<pathNodes.length-1 && pathNodes[j+1].tagName == 'quad') {
+            var xc = currentPoint.x * 2 - point1.x;
+            var yc = currentPoint.y * 2 - point1.y;
+            controlPoint.push(new mxPoint(xc, yc));
+          } else {
+            terminalPoint = new mxPoint(currentPoint.x, currentPoint.y);
+            isCurve = false;
+            var cell = new mxCell();
+            var newGeo = new mxGeometry();
+            newGeo.sourcePoint = sourcePoint;
+            newGeo.points = controlPoint;
+            newGeo.targetPoint = terminalPoint;
+            cell.setGeometry(newGeo);
+            cell.style = 'endArrow=none;curved=1;';
+            cell.edge = true;
+            cellsToAdd.push(cell);
+            lastCells.push(cell);
+          }
+        }
+        prevPoint = currentPoint;
+      }
+
+    } else if(node.tagName == 'dashed') {
+      if(node.getAttribute('dashed')=='1') {
+        var dashedPattern;
+        if(node.nextSibling.tagName == 'dashpattern') {
+          this.addAttrStyleCells(lastCells, 'dashPattern', node.nextSibling.getAttribute('pattern'));
+        }
+        this.addAttrStyleCells(lastCells, mxConstants.STYLE_DASHED, 1);
+      }
+    } else if(node.tagName == 'strokewidth') {
+      this.addAttrStyleCells(lastCells, mxConstants.STYLE_STROKEWIDTH, node.getAttribute('width'));
+    } else if(node.tagName == 'strokecolor') {
+      this.addAttrStyleCells(lastCells, mxConstants.STYLE_STROKECOLOR, node.getAttribute('color'));
+    } else if(node.tagName == 'fillcolor') {
+      this.addAttrStyleCells(lastCells, mxConstants.STYLE_FILLCOLOR, node.getAttribute('color'));
+    } else {
+      continue;
+    }
+  }
+  this.graph.getModel().beginUpdate();
+  this.graph.addCells(cellsToAdd);
+  this.graph.removeCells([cellToTransform]);
+  this.graph.getModel().endUpdate();
+  this.graph.refresh();
+
+}
+
+/*
+ *  Questo funzione restituisc tutti i nodi figli che non sono testo
+ */
+ShapeCreator.prototype.getAllElementChildNodes = function(parent) {
+  var elementChildren = [];
+  var cn = parent.childNodes;
+  var i=0;
+  for(i=0; i<cn.length; i++) {
+    if(cn[i].nodeType!=Node.TEXT_NODE) {
+      elementChildren.push(cn[i]);
+    }
+  }
+  return elementChildren;
+}
+
+/**
+ *  Questa funzione aggiunge un valore di stile ad una lista di simboli.
+ * @param cells lista di simboli di cui modificare lo stile
+ * @param stylename nome dell'attributo dello stile da modificare
+ * @param stylevalue nuovo valore da assegnare all'attributo
+ */
+ShapeCreator.prototype.addAttrStyleCells = function(cells, stylename, stylevalue) {
+  var i;
+  for(i=0; i<cells.length; i++) {
+    cells[i].style = mxUtils.setStyle(cells[i].style, stylename, stylevalue);
+  }
 }

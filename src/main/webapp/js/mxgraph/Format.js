@@ -1721,6 +1721,21 @@ ArrangePanel.prototype.addGroupOps = function(div)
 		div.appendChild(btn);
 		count++;
 	}
+	if(graph.getSelectionCount()==1 && (graph.getSelectionCell().style.includes('stencil') || graph.getSelectionCell().style.includes('group'))) {
+		if( count > 0) {
+			mxUtils.br(div);
+		}
+		btn = mxUtils.button('Unmerge', function(evt)
+		{
+			ui.actions.get('unmerge').funct();
+		})
+
+		btn.setAttribute('title', 'Unmerge');
+		btn.style.width = '202px';
+		btn.style.marginBottom = '2px';
+		div.appendChild(btn);
+		count++;
+	}
 	if (count == 0)
 	{
 		div.style.display = 'none';
