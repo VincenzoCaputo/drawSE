@@ -5,13 +5,13 @@ mxCell.prototype.areaConstraint = -1;
 //Specifica se il simbolo ha un contorno di attacco
 mxCell.prototype.outlineConstraint = -1
 //Specifica il colore dell'area di attacco
-mxCell.prototype.areaConstraintColor = '#FFFFFF'
+mxCell.prototype.areaConstraintColor = 'none';
 //Specifica il colore del contorno d'attacco
-mxCell.prototype.outlineConstraintColor = '#000000'
+mxCell.prototype.outlineConstraintColor = '#000000';
 //Specifica il colore di riempimento del simbolo
-mxCell.prototype.fillColor = '#FFFFFF'
+mxCell.prototype.fillColor = '#FFFFFF';
 //Specifica il colore di contorno del simbolo
-mxCell.prototype.strokeColor = '#000000'
+mxCell.prototype.strokeColor = '#000000';
 
 /**
  * Questa funzione restituisce true se il simbolo è un punto di attacco, false altrimenti

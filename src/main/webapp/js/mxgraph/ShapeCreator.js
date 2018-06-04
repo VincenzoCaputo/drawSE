@@ -201,6 +201,8 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
           }
         } else if(attachedPoints[j].getShapeType() == shape.STENCIL_SHAPE_TYPE) {
           if(attachedPoints[j].isAreaConstraint()) {
+            var stencil = this.graph.getCellStyle(attachedPoints[j])[mxConstants.STYLE_SHAPE];
+
             var ctx = this.createCanvas(attachedPoints[j]);
             var relX;
             var relY;
@@ -215,6 +217,14 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
             var constraintNode = this.xmlDoc.createDocumentFragment();
             var areaWidth = attachedPoints[j].getGeometry().width;
             var areaHeight = attachedPoints[j].getGeometry().height;
+            //Informazioni sull'area per l'unmerge
+            var areaAttackNode = this.xmlDoc.createElement('areaattack');
+            areaAttackNode.setAttribute('stencil', stencil);
+            areaAttackNode.setAttribute('x', relX);
+            areaAttackNode.setAttribute('y', relY);
+            areaAttackNode.setAttribute('w', areaWidth);
+            areaAttackNode.setAttribute('h', areaHeight);
+            constraintNode.appendChild(areaAttackNode);
             var row;
             var col;
             for(row=0;row<=areaWidth;row=row+5) {
@@ -231,7 +241,7 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
                   }*/
                   cn.setAttribute('x', (relX+row)/groupProp.w);
                   cn.setAttribute('y', (relY+col)/groupProp.h);
-                  cn.setAttribute('name',attachedPoints[j].getAttribute('label',''));
+                  cn.setAttribute('name','A'+attachedPoints[j].id+'_'+attachedPoints[j].getAttribute('label',''));
                   cn.setAttribute('perimeter',0);
                   constraintNode.appendChild(cn);
                 }
@@ -558,7 +568,7 @@ ShapeCreator.prototype.createPointConstraintNode = function(shape, point, groupP
 
   constraintNode.setAttribute('x', x);
   constraintNode.setAttribute('y', y);
-  constraintNode.setAttribute('name',point.getAttribute('label','P'+point.id));
+  constraintNode.setAttribute('name','P'+point.id+'_'+point.getAttribute('label',''));
   constraintNode.setAttribute('perimeter',0);
 
   return constraintNode;
@@ -566,7 +576,10 @@ ShapeCreator.prototype.createPointConstraintNode = function(shape, point, groupP
 
 ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupProp) {
   var points = line.getAllPoints();
+  var lineAttackNode = this.xmlDoc.createDocumentFragment();
   var constraintNodes = this.xmlDoc.createDocumentFragment();
+
+  var linePoints = [];
   var i;
   for(i=0; i<points.length-1; i++) {
     var x1 = points[i].x;
@@ -585,6 +598,9 @@ ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupPro
     var y1 = (y1-groupProp.y);
     var x2 = (x2-groupProp.x);
     var y2 = (y2-groupProp.y);
+
+    linePoints.push({x: x1, y: y1});
+    linePoints.push({x: x2, y: y2});
     //calcolo coefficiente angolare
     var m = (y2 - y1) / (x2 - x1);
     //calcolo quota all'origine
@@ -608,7 +624,7 @@ ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupPro
         }
         constraintNode.setAttribute('x', x/groupProp.w);
         constraintNode.setAttribute('y', y/groupProp.h);
-        constraintNode.setAttribute('name',line.getAttribute('label',''));
+        constraintNode.setAttribute('name','L'+line.id+'_'+line.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
@@ -624,18 +640,24 @@ ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupPro
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', x/groupProp.w);
         constraintNode.setAttribute('y', y/groupProp.h);
-        constraintNode.setAttribute('name',line.getAttribute('label',''));
+        constraintNode.setAttribute('name','L'+line.id+'_'+line.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
     }
   }
-  return constraintNodes;
+  var lineSpecNode = this.xmlDoc.createElement('lineattack');
+  lineSpecNode.setAttribute('x', this.graph.compress(JSON.stringify(linePoints)));
+  lineAttackNode.appendChild(lineSpecNode);
+  lineAttackNode.appendChild(constraintNodes);
+  return lineAttackNode;
 }
 
 ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupProp) {
   var points = curve.getAllPoints();
+  var curveLineNode = this.xmlDoc.createDocumentFragment();
   var constraintNodes = this.xmlDoc.createDocumentFragment();
+
   var relativeP = [];
   var i;
   for(i=0; i<points.length; i++) {
@@ -658,11 +680,10 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
       var constraintNode = this.xmlDoc.createElement('constraint');
       constraintNode.setAttribute('x', p.x/groupProp.w);
       constraintNode.setAttribute('y', p.y/groupProp.h);
-      constraintNode.setAttribute('name',curve.getAttribute('label',''));
+      constraintNode.setAttribute('name','C'+curve.id+'_'+curve.getAttribute('label',''));
       constraintNode.setAttribute('perimeter',0);
       constraintNodes.appendChild(constraintNode);
     }
-    return constraintNodes;
   } else {
     var j;
     var prexc = relativeP[0].x;
@@ -677,7 +698,7 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', p.x/groupProp.w);
         constraintNode.setAttribute('y', p.y/groupProp.h);
-        constraintNode.setAttribute('name',curve.getAttribute('label',''));
+        constraintNode.setAttribute('name','C'+curve.id+'_'+curve.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
@@ -692,12 +713,17 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
       var constraintNode = this.xmlDoc.createElement('constraint');
       constraintNode.setAttribute('x', p.x/groupProp.w);
       constraintNode.setAttribute('y', p.y/groupProp.h);
-      constraintNode.setAttribute('name',curve.getAttribute('label',''));
+      constraintNode.setAttribute('name','C'+curve.id+'_'+curve.getAttribute('label',''));
       constraintNode.setAttribute('perimeter',0);
       constraintNodes.appendChild(constraintNode);
     }
-    return constraintNodes;
+
   }
+  var curveSpecNode = this.xmlDoc.createElement('curveattack');
+  curveSpecNode.setAttribute('x', this.graph.compress(JSON.stringify(relativeP)));
+  curveLineNode.appendChild(curveSpecNode);
+  curveLineNode.appendChild(constraintNodes);
+  return curveLineNode;
 }
 
 /**
@@ -716,14 +742,14 @@ ShapeCreator.prototype.createStencilOutlineConstraintNode = function(shape, grou
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', i/groupProp.w);
         constraintNode.setAttribute('y', y/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('label',''));
+        constraintNode.setAttribute('name','A'+shape.id+'_'+shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
 
         constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', i/groupProp.w);
         constraintNode.setAttribute('y', (y+geo.height)/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('label',''));
+        constraintNode.setAttribute('name','A'+shape.id+'_'+shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
@@ -732,14 +758,14 @@ ShapeCreator.prototype.createStencilOutlineConstraintNode = function(shape, grou
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', x/groupProp.w);
         constraintNode.setAttribute('y', i/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('label',''));
+        constraintNode.setAttribute('name','A'+shape.id+'_'+shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
 
         constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', (x+geo.width)/groupProp.w);
         constraintNode.setAttribute('y', i/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('label',''));
+        constraintNode.setAttribute('name','A'+shape.id+'_'+shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
@@ -749,7 +775,7 @@ ShapeCreator.prototype.createStencilOutlineConstraintNode = function(shape, grou
         var constraintNode = this.xmlDoc.createElement('constraint');
         constraintNode.setAttribute('x', (x+(((geo.width/2)*Math.cos(i)))+geo.width/2)/groupProp.w);
         constraintNode.setAttribute('y', (y+(((geo.height/2)*Math.sin(i)))+geo.height/2)/groupProp.h);
-        constraintNode.setAttribute('name',shape.getAttribute('label',''));
+        constraintNode.setAttribute('name','A'+shape.id+'_'+shape.getAttribute('label',''));
         constraintNode.setAttribute('perimeter',0);
         constraintNodes.appendChild(constraintNode);
       }
@@ -789,19 +815,66 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
 
   var connectionsNode = shapeXml.getElementsByTagName('connections')[0];
   var connectionChildNodes = this.getAllElementChildNodes(connectionsNode);
+
   var i;
   for(i=0; i<connectionChildNodes.length; i++) {
     var node = connectionChildNodes[i];
-    if(node.tagName == 'constraint' && node.getAttribute('name').includes('P')) {
+    if(node.tagName == 'constraint' && node.getAttribute('name')[0] == 'P') {
       var x = node.getAttribute('x')*geoCell.width+geoCell.x;
       var y = node.getAttribute('y')*geoCell.height+geoCell.y;
       var doc = mxUtils.createXmlDocument();
-      var node = doc.createElement('AttackSymbol');
-		  node.setAttribute('label', '');
-			node.setAttribute('isConstraint', 1);
-      var cell = new mxCell(node, new mxGeometry(x, y, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
+      var nodeCell = doc.createElement('AttackSymbol');
+		  nodeCell.setAttribute('label', '');
+			nodeCell.setAttribute('isConstraint', 1);
+      var cell = new mxCell(nodeCell, new mxGeometry(x, y, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
       cell.vertex = true;
       cell.connectable = false;
+      cell.visible = false;
+      cellsToAdd.push(cell);
+    } else if(node.tagName == 'lineattack' || node.tagName == 'curveattack') {
+      var points = JSON.parse(this.graph.decompress(node.getAttribute('x')));
+
+      var lineGeometry = new mxGeometry();
+      lineGeometry.sourcePoint = new mxPoint(geoCell.x+points[0].x, geoCell.y+points[0].y);
+
+      lineGeometry.points = [];
+      var j;
+      for(j=1; j<points.length-1; j++) {
+        lineGeometry.points.push(new mxPoint(geoCell.x+points[j].x, geoCell.y+points[j].y));
+      }
+      lineGeometry.targetPoint = new mxPoint(geoCell.x+points[j].x, geoCell.y+points[j].y);
+      var doc = mxUtils.createXmlDocument();
+      var nodeCell = doc.createElement('AttackSymbol');
+		  nodeCell.setAttribute('label', '');
+			nodeCell.setAttribute('isConstraint', 1);
+      var style;
+      if(node.tagName == 'lineattack') {
+        style = 'endArrow=none;html=1;rounded=0;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
+      } else {
+        style = 'curved=1;endArrow=none;html=1;rotatable=0;resizable=0;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
+      }
+      var cell = new mxCell(nodeCell, lineGeometry, style);
+      cell.edge = true;
+      cell.connectable = false;
+      cell.visible = false;
+      cellsToAdd.push(cell);
+    } else if(node.tagName == 'areaattack') {
+      var stencil = node.getAttribute('stencil');
+      var sourcePoint_x = geoCell.x+Number(node.getAttribute('x'));
+      var sourcePoint_y = geoCell.y+Number(node.getAttribute('y'));
+      var dimension_w = Number(node.getAttribute('w'));
+      var dimension_h = Number(node.getAttribute('h'));
+      var areaGeometry = new mxGeometry(sourcePoint_x, sourcePoint_y, dimension_w, dimension_h);
+      var doc = mxUtils.createXmlDocument();
+      var nodeCell = doc.createElement('AttackSymbol');
+		  nodeCell.setAttribute('label', '');
+			nodeCell.setAttribute('isConstraint', 1);
+      nodeCell.setAttribute('areaConstraint', 1);
+      var style = 'shape='+stencil+';fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
+      var cell = new mxCell(nodeCell, areaGeometry, style);
+      cell.vertex = true;
+      cell.connectable = false;
+      cell.visible = false;
       cellsToAdd.push(cell);
     }
   }
