@@ -414,11 +414,11 @@ Format.prototype.refresh = function()
 				{
 					if (containsLabel)
 					{
-						this.labelIndex = index;
+						this.labelIndex = 0/*index*/; //In questo modo apre sempre il primo tab
 					}
 					else
 					{
-						this.currentIndex = index;
+						this.currentIndex = 0/*index*/;
 					}
 
 					if (currentLabel != null)
@@ -1477,7 +1477,7 @@ ArrangePanel.prototype.init = function()
 		this.container.appendChild(this.addConstraintPanel(this.createPanel()));
 	}
 
-	if(graph.isConstraintMode() && graph.getSelectionCount()>1) {
+	/*if(graph.isConstraintMode() && graph.getSelectionCount()>1) {
 		var selectedCell = graph.getSelectionCells();
 		var countSymbol = 0;
 		for(i=0; i<selectedCell.length && countSymbol<2; i++) {
@@ -1495,7 +1495,7 @@ ArrangePanel.prototype.init = function()
 		if(selectedCell.isConstraint() && selectedCell.getParent()!=graph.getDefaultParent()) {
 			this.container.appendChild(this.addDetachPanel(this.createPanel()));
 		}
-	}
+	}*/
 
 	if(graph.getSelectionCount()==1 && !graph.getSelectionCell().isConstraint() && graph.getSelectionCell().isAreaConstraint()) {
 		this.container.appendChild(this.addFill(this.createPanel()));
@@ -1992,7 +1992,21 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 						graph.refresh();
 					}
 				} else {
-					selectedCell.removeAreaConstraint();
+					var selectedCellColor = graph.getCellStyle(selectedCells[0])[mxConstants.STYLE_STROKECOLOR];
+					var selectedCellShape = graph.getCellStyle(selectedCells[0])[mxConstants.STYLE_SHAPE];
+						if(selectedCellShape.includes('stencil(')) {
+							var shCr = new ShapeCreator(graph);
+							var constraints = shCr.unmergeShape(selectedCells[0]);
+							var j;
+							for(j=0; j<constraints.length; j++) {
+
+								constraints[j].setStyle(mxUtils.setStyle(constraints[j].style, mxConstants.STYLE_STROKECOLOR, selectedCellColor));
+								constraints[j].setConstraint();
+							}
+						} else {
+							selectedCells[0].removeAreaConstraint();
+						}
+						graph.refresh();
 				}
 				var style = selectedCell.style;
 				style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);

@@ -220,10 +220,11 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
             //Informazioni sull'area per l'unmerge
             var areaAttackNode = this.xmlDoc.createElement('areaattack');
             areaAttackNode.setAttribute('stencil', stencil);
-            areaAttackNode.setAttribute('x', relX);
-            areaAttackNode.setAttribute('y', relY);
+            areaAttackNode.setAttribute('x', 'P'+relX);
+            areaAttackNode.setAttribute('y', 'P'+relY);
             areaAttackNode.setAttribute('w', areaWidth);
             areaAttackNode.setAttribute('h', areaHeight);
+            areaAttackNode.setAttribute('area', 1);
             constraintNode.appendChild(areaAttackNode);
             var row;
             var col;
@@ -736,6 +737,15 @@ ShapeCreator.prototype.createStencilOutlineConstraintNode = function(shape, grou
     var constraintNodes = this.xmlDoc.createDocumentFragment();
     var x = geo.x-groupProp.x;
     var y = geo.y-groupProp.y;
+
+    var areaAttackNode = this.xmlDoc.createElement('areaattack');
+    areaAttackNode.setAttribute('stencil', this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE]);
+    areaAttackNode.setAttribute('x', 'P'+x);
+    areaAttackNode.setAttribute('y', 'P'+y);
+    areaAttackNode.setAttribute('w', geo.width);
+    areaAttackNode.setAttribute('h', geo.height);
+    areaAttackNode.setAttribute('area', '0');
+    constraintNodes.appendChild(areaAttackNode);
     if(this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE]=='mxgraph.general.rectangle') {
       var i;
       for(i=x; i<x+geo.width; i=i+2) {
@@ -820,8 +830,8 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
   for(i=0; i<connectionChildNodes.length; i++) {
     var node = connectionChildNodes[i];
     if(node.tagName == 'constraint' && node.getAttribute('name')[0] == 'P') {
-      var x = node.getAttribute('x')*geoCell.width+geoCell.x;
-      var y = node.getAttribute('y')*geoCell.height+geoCell.y;
+      var x = node.getAttribute('x')*geoCell.width+geoCell.x-2.5;
+      var y = node.getAttribute('y')*geoCell.height+geoCell.y-2.5;
       var doc = mxUtils.createXmlDocument();
       var nodeCell = doc.createElement('AttackSymbol');
 		  nodeCell.setAttribute('label', '');
@@ -829,7 +839,6 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       var cell = new mxCell(nodeCell, new mxGeometry(x, y, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
       cell.vertex = true;
       cell.connectable = false;
-      cell.visible = false;
       cellsToAdd.push(cell);
     } else if(node.tagName == 'lineattack' || node.tagName == 'curveattack') {
       var points = JSON.parse(this.graph.decompress(node.getAttribute('x')));
@@ -856,12 +865,11 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       var cell = new mxCell(nodeCell, lineGeometry, style);
       cell.edge = true;
       cell.connectable = false;
-      cell.visible = false;
       cellsToAdd.push(cell);
     } else if(node.tagName == 'areaattack') {
       var stencil = node.getAttribute('stencil');
-      var sourcePoint_x = geoCell.x+Number(node.getAttribute('x'));
-      var sourcePoint_y = geoCell.y+Number(node.getAttribute('y'));
+      var sourcePoint_x = geoCell.x+Number(node.getAttribute('x').substring(1));
+      var sourcePoint_y = geoCell.y+Number(node.getAttribute('y').substring(1));
       var dimension_w = Number(node.getAttribute('w'));
       var dimension_h = Number(node.getAttribute('h'));
       var areaGeometry = new mxGeometry(sourcePoint_x, sourcePoint_y, dimension_w, dimension_h);
@@ -869,12 +877,17 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       var nodeCell = doc.createElement('AttackSymbol');
 		  nodeCell.setAttribute('label', '');
 			nodeCell.setAttribute('isConstraint', 1);
-      nodeCell.setAttribute('areaConstraint', 1);
-      var style = 'shape='+stencil+';fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
+      var style = '';
+      if(Number(node.getAttribute('area'))==1) {
+        nodeCell.setAttribute('areaConstraint', 1);
+        style = 'shape='+stencil+';fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
+      } else {
+        nodeCell.setAttribute('areaConstraint', 0);
+        style = 'shape='+stencil+';fillColor=none;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
+      }
       var cell = new mxCell(nodeCell, areaGeometry, style);
       cell.vertex = true;
       cell.connectable = false;
-      cell.visible = false;
       cellsToAdd.push(cell);
     }
   }
@@ -990,6 +1003,16 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
             cellsToAdd.push(cell);
             lastCells.push(cell);
           }
+        } else if(pathNodes[j].tagName == 'close') {
+          var cell = new mxCell();
+          var newGeo = new mxGeometry();
+          newGeo.sourcePoint = currentPoint;
+          newGeo.targetPoint = new mxPoint(Number(pathNodes[0].getAttribute('x'))+geoCell.x, Number(pathNodes[0].getAttribute('y'))+geoCell.y);
+          cell.setGeometry(newGeo);
+          cell.style = 'endArrow=none;curved=0;rounded=0;';
+          cell.edge = true;
+          cellsToAdd.push(cell);
+          lastCells.push(cell);
         }
         prevPoint = currentPoint;
       }
@@ -1017,19 +1040,21 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
   this.graph.removeCells([cellToTransform]);
   this.graph.getModel().endUpdate();
   this.graph.refresh();
-
+  return cellsToAdd;
 }
 
 /*
- *  Questo funzione restituisc tutti i nodi figli che non sono testo
+ *  Questo funzione restituisc tutti i nodi XML figli che non sono testo
  */
 ShapeCreator.prototype.getAllElementChildNodes = function(parent) {
   var elementChildren = [];
-  var cn = parent.childNodes;
-  var i=0;
-  for(i=0; i<cn.length; i++) {
-    if(cn[i].nodeType!=Node.TEXT_NODE) {
-      elementChildren.push(cn[i]);
+  if(parent!=null) {
+    var cn = parent.childNodes;
+    var i=0;
+    for(i=0; i<cn.length; i++) {
+      if(cn[i].nodeType!=Node.TEXT_NODE) {
+        elementChildren.push(cn[i]);
+      }
     }
   }
   return elementChildren;

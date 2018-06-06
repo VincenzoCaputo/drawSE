@@ -954,42 +954,122 @@ mxUtils.extend(Graph, mxGraph);
 	*	Questa funzione nasconde tutti i punti di attacco
 		*/
  Graph.prototype.hideConstraints = function() {
-	 var cells = this.getModel().getChildCells(this.getDefaultParent());
-	 for(i=0; i<cells.length; i++) {
-		 if(cells[i].isConstraint()) {
-			 cells[i].setVisible(false);
+	 //Ricavo tutti i simboli che rappresentano punti di attacco
+	 var cellsConstraint = this.getModel().filterDescendants(function(cell) {
+		 if(cell.isConstraint() && cell.getParent().id=='1') {
+			 return true;
 		 }
-		 //Nascondo i punti di attacco attached
-		 if(cells[i].children!=null) {
-			 var children = this.getModel().getChildCells(cells[i]);
-			 for(j=0; j<children.length; j++) {
-				 if(children[j].isConstraint()) {
-					 children[j].setVisible(false);
+	 });
+	 //Ricavo tutti i simboli (non punti di attacco e non testo)
+	 var cells = this.getModel().filterDescendants(mxUtils.bind(this, function(cell) {
+
+		 if((cell.vertex || cell.edge) && !cell.isConstraint() && !cell.style.includes('text')) {
+			 return true;
+		 }
+	 }));
+
+	 var containerCell = null;
+	 var containerCellArea = null;
+	 //array di simboli da trasformare in XML
+	 var parentCells = [];
+	 var i;
+	 //Per ogni punto di attacco, trovo il simbolo contenitore più grande
+	 for(i=0; i<cellsConstraint.length; i++) {
+		 var j=0;
+		 for(j=0; j<cells.length; j++) {
+			 //Ricavo il rettangolo circoscritto al simbolo
+			 var parentPerimeter = this.view.getState(cells[j]).getPerimeterBounds(10);
+			 //Ricavo il rettangolo circoscritto al simbolo constraint
+			 var constraintPerimeter = this.view.getState(cellsConstraint[i]).getPerimeterBounds();
+			 if(mxUtils.contains(parentPerimeter,constraintPerimeter.x, constraintPerimeter.y)) {
+				 if(containerCell == null) {
+					 containerCell = j;
+					 containerCellArea = parentPerimeter.width*parentPerimeter.height;
+				 } else {
+					 var area = parentPerimeter.width*parentPerimeter.height;
+					 if(area>containerCellArea) {
+						 containerCellArea = area;
+						 containerCell = j;
+					 }
 				 }
 			 }
 		 }
+		 if(!parentCells.includes(cells[containerCell])) {
+		 		parentCells.push(cells[containerCell]);
+	 	 }
+		 if(containerCell!=null) {
+			 if(!cells[containerCell].edge) {
+					var symbolPosition = {x: cells[containerCell].getGeometry().x, y: cells[containerCell].getGeometry().y};
+					cellsConstraint[i].getGeometry().translate(-symbolPosition.x, -symbolPosition.y);
+			 }
+			 this.getModel().add(cells[containerCell], cellsConstraint[i]);
+			 containerCell = null;
+			 containerCellArea = null;
+	 	 } else {
+			 cellsConstraint[i].setVisible(false);
+		 }
+
 	 }
-	 this.refresh();
+
+	 var parentCellsToTransform = this.getModel().filterDescendants(function(cell) {
+		 if(parentCells.includes(cell) || ((cell.vertex || cell.edge) && !cell.isConstraint() && cell.isOutlineConstraint())) {
+			 return true;
+		 }
+	 });
+	 console.log(parentCellsToTransform);
+	 var shapeCreator =new ShapeCreator(this);
+	 var i;
+	 for(i=0; i<parentCellsToTransform.length; i++) {
+		 if(this.view.getState(parentCellsToTransform[i])!=null) {
+			 var intersectCells = this.getModel().filterDescendants(mxUtils.bind(this, function(cell) {
+				 if((cell.vertex || cell.edge) && !cell.isConstraint()) {
+					  var perimeter1 = this.view.getState(cell).getPerimeterBounds(5);
+						var perimeter2 = this.view.getState(parentCellsToTransform[i]).getPerimeterBounds(5);
+					 	return mxUtils.intersects(perimeter1, perimeter2);
+				 }
+			 }));
+			shapeCreator.mergeShapes(intersectCells, false, false);
+		}
+	}
+	/*var cellsToMerge
+	var shapeCreator = new ShapeCreator(this);
+	var i;
+	for(i=0; i<cellsToMerge.length; i++) {
+		shapeCreator.mergeShapes(cellsToMerge[i], false, false);
+	}*/
  }
 
  /**
 	*	Questa funzione mostra tutti i punti di attacco nascosti
 		*/
  Graph.prototype.showConstraints = function() {
-	 var cells = this.getModel().getChildCells(this.getDefaultParent());
+	 var stencils = this.getModel().filterDescendants(function(cell) {
+		 if(cell.vertex==true && !cell.isConstraint() && (cell.getStyle().includes('stencil(') || cell.getStyle().includes('group'))) {
+			 return true;
+		 }
+	 });
+	 var i;
+	 for(i=0; i<stencils.length; i++) {
+		 var shapeCreator =new ShapeCreator(this);
+		 if(stencils[i].style.includes('stencil(')) {
+				shapeCreator.unmergeShape(stencils[i]);
+
+		 } else {
+			 this.setSelectionCell(stencils[i]);
+			 this.ungroupCells();
+		 }
+		 this.getModel().remove(stencils[i]);
+	 }
+
+	 var cells = this.getModel().filterDescendants(function(cell) {
+		 if(cell.isConstraint()) {
+			 return true;
+		 }
+	 })
+
+	 var i;
 	 for(i=0; i<cells.length; i++) {
-		 if(cells[i].isConstraint()) {
-			 cells[i].setVisible(true);
-		 }
-		 //Mostro i punti di attacco attached
-		 if(cells[i].children!=null) {
-			 var children = this.getModel().getChildCells(cells[i]);
-			 for(j=0; j<children.length; j++) {
-				 if(children[j].isConstraint()) {
-					 children[j].setVisible(true);
-				 }
-			 }
-		 }
+		 cells[i].setVisible(true);
 	 }
 	 this.refresh();
  }
@@ -6191,14 +6271,14 @@ if (typeof mxVertexHandler != 'undefined')
 				var graph = state.view.graph;
 				var selected = graph.isCellSelected(state.cell);
 				var parent = graph.model.getParent(state.cell);
-				
+
 				// Checks if parent cell is selected
 				while (!ignoreSelection && !selected && parent != null)
 				{
 					selected = graph.isCellSelected(parent);
 					parent = graph.model.getParent(parent);
 				}
-				
+
 				if (ignoreSelection || selected)
 				{
 					imgExportDrawCellState.apply(this, arguments);

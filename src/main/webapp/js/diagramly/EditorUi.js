@@ -222,8 +222,6 @@
 				 }
 			} else if(graph.isConstraintMode()) {
 					graph.editorMode = mxResources.get('shapeMode');
-					graph.hideConstraints();
-
 					var cells = graph.getModel().filterDescendants(function(cell) {
 						return !cell.isConstraint() && (cell.vertex || cell.edge);
 					});
@@ -240,6 +238,7 @@
 					}
 					graph.getModel().setStyle(cells[i], style);
 					}
+					graph.hideConstraints();
 			}
 			//Deseleziona tutti i simboli
 			graph.setSelectionCells([]);
