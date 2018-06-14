@@ -198,6 +198,8 @@ mxCell.prototype.getShapeType = function() {
     return this.GROUP_SHAPE_TYPE;
   } else if(this.getStyle().includes('curved=1')) {
     return this.CURVE_SHAPE_TYPE;
+  } else if(this.getStyle().includes('shape=image')) {
+    return this.IMAGE_SHAPE_TYPE;
   } else if(this.getStyle().includes('shape=')) {
     return this.STENCIL_SHAPE_TYPE;
   } else if(this.getStyle().includes('text')) {
@@ -211,3 +213,4 @@ mxCell.prototype.STENCIL_SHAPE_TYPE = 'stencil';
 mxCell.prototype.LINE_SHAPE_TYPE = 'line';
 mxCell.prototype.TEXT_SHAPE_TYPE = 'text';
 mxCell.prototype.GROUP_SHAPE_TYPE = 'group';
+mxCell.prototype.IMAGE_SHAPE_TYPE = 'image';

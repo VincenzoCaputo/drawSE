@@ -119,7 +119,6 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
   //Creo dei frammenti in cui inserire gli elementi XML rappresentante il simbolo
   var fgNode = this.xmlDoc.createDocumentFragment();
   var constraintNodes = this.xmlDoc.createDocumentFragment();
-
   //Se il simbolo è un gruppo, rappresento l'area di attacco.
   if(shapeType == shape.GROUP_SHAPE_TYPE && shape.isConstraint()) {
     var children = shape.children;
@@ -143,6 +142,8 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
       if(shape.isOutlineConstraint()) {
         constraintNodes.appendChild(this.createCurveConstraintNode(shape, shape, groupProp));
       }
+    } else if(shapeType == shape.IMAGE_SHAPE_TYPE) {
+      fgNode.appendChild(this.createImageNode(shape, groupProp));
     }
 
     if(this.graph.getCellStyle(shape)[mxConstants.STYLE_DASHED]) {
@@ -551,6 +552,18 @@ ShapeCreator.prototype.createCurveNode = function(shape, groupProp) {
   return pathNode;
 }
 
+ShapeCreator.prototype.createImageNode = function(shape, groupProp) {
+  var state = this.graph.getView().getState(shape);
+  var url = state.style[mxConstants.STYLE_IMAGE];
+  var imageNode = this.xmlDoc.createElement('image');
+  imageNode.setAttribute('src', url);
+  imageNode.setAttribute('x', state.origin.x-groupProp.x);
+  imageNode.setAttribute('y', state.origin.y-groupProp.y);
+  imageNode.setAttribute('w', state.cellBounds.width);
+  imageNode.setAttribute('h', state.cellBounds.height);
+  return imageNode;
+}
+
 /**
  * Questo metodo restituisce un nodo XML rappresentante un punto di attacco
  */
@@ -839,6 +852,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       var cell = new mxCell(nodeCell, new mxGeometry(x, y, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
       cell.vertex = true;
       cell.connectable = false;
+      cell.visible = false;
       cellsToAdd.push(cell);
     } else if(node.tagName == 'lineattack' || node.tagName == 'curveattack') {
       var points = JSON.parse(this.graph.decompress(node.getAttribute('x')));
@@ -865,6 +879,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       var cell = new mxCell(nodeCell, lineGeometry, style);
       cell.edge = true;
       cell.connectable = false;
+      cell.visible = false;
       cellsToAdd.push(cell);
     } else if(node.tagName == 'areaattack') {
       var stencil = node.getAttribute('stencil');
@@ -883,11 +898,13 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
         style = 'shape='+stencil+';fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
       } else {
         nodeCell.setAttribute('areaConstraint', 0);
+        nodeCell.setAttribute('outlineConstraint',1);
         style = 'shape='+stencil+';fillColor=none;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
       }
       var cell = new mxCell(nodeCell, areaGeometry, style);
       cell.vertex = true;
       cell.connectable = false;
+      cell.visible = false;
       cellsToAdd.push(cell);
     }
   }
@@ -902,7 +919,26 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
     var node = foregroundChildNodes[i];
 
     var groupProp;
-    if(node.tagName == 'rect') {
+    if(node.tagName == 'image') {
+      lastCells = [];
+      var cell = new mxCell();
+      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
+      cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, 'image');
+      cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_IMAGE, node.getAttribute('src').replace(';base64',''));
+      cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_STROKEWIDTH, 1);
+      cell.vertex = true;
+      cell.connectable = false;
+      cellsToAdd.push(cell);
+      lastCells.push(cell);
+    } else if(node.tagName == 'include-shape') {
+      lastCells = [];
+      var cell = new mxCell();
+      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
+      cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, node.getAttribute('name'));
+      cell.vertex = true;
+      cellsToAdd.push(cell);
+      lastCells.push(cell);
+    } else if(node.tagName == 'rect') {
       lastCells = [];
       var cell = new mxCell();
       cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));

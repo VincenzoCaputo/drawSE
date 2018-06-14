@@ -1074,6 +1074,10 @@ Menus.prototype.createPopupMenu = function(menu, cell, evt)
 				menu.addSeparator();
 				this.addMenuItems(menu, ['merge'], null, evt);
 			}
+			if(graph.getSelectionCount() == 1) {
+				menu.addSeparator();
+				this.addMenuItems(menu, ['unmerge'], null, evt);
+			}
 			if (graph.getSelectionCount() == 1)
 			{
 				menu.addSeparator();

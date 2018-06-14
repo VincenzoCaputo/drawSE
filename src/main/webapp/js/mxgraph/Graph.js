@@ -1016,7 +1016,6 @@ mxUtils.extend(Graph, mxGraph);
 			 return true;
 		 }
 	 });
-	 console.log(parentCellsToTransform);
 	 var shapeCreator =new ShapeCreator(this);
 	 var i;
 	 for(i=0; i<parentCellsToTransform.length; i++) {
@@ -1071,6 +1070,7 @@ mxUtils.extend(Graph, mxGraph);
 	 for(i=0; i<cells.length; i++) {
 		 cells[i].setVisible(true);
 	 }
+	 this.orderCells(false,cells);
 	 this.refresh();
  }
 /**Override delle funzioni per la modifica dei simboli*/

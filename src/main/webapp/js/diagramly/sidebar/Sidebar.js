@@ -664,6 +664,11 @@
 			nodeArea.setAttribute('isConstraint', 1);
 			nodeArea.setAttribute('areaConstraint',1);
 			nodeArea.setAttribute('outlineConstraint',1);
+			var nodeOutline = doc.createElement('AttackSymbol');
+			nodeOutline.setAttribute('label', '');
+			nodeOutline.setAttribute('isConstraint', 1);
+			nodeOutline.setAttribute('areaConstraint',0);
+			nodeOutline.setAttribute('outlineConstraint',1);
 			var fns = [
 				this.addEntry('point', mxUtils.bind(this, function()
 				{
@@ -685,8 +690,11 @@
 
 						return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Attack Curve');
 				})),
-				this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'Square', null, null, 'Square'),
-				this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'Circle', null, null, 'Circle'),
+				this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'SquareArea', null, null, 'SquareArea'),
+				this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'CircleArea', null, null, 'CircleArea'),
+				this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=none;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeOutline, 'SquareOutline', null, null, 'SquareOutline'),
+				this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=none;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeOutline, 'CircleOutline', null, null, 'CircleOutline'),
+
 			 ];
 
 			this.addPaletteFunctions('attack points', 'Attack points', (expand != null) ? expand : true, fns);

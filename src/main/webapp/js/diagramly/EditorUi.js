@@ -2066,6 +2066,7 @@
 		if (doc.documentElement.nodeName == 'mxlibrary')
 		{
 			var images = JSON.parse(mxUtils.getTextContent(doc.documentElement));
+			console.log(doc.documentElement);
 			this.libraryLoaded(file, images, doc.documentElement.getAttribute('title'));
 		}
 		else
