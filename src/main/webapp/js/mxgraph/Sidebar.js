@@ -918,20 +918,38 @@ Sidebar.prototype.addGeneralPalette = function(expand)
 	var lineTags = 'line lines connector connectors connection connections arrow arrows ';
 	mxStencilRegistry.loadStencilSet(STENCIL_PATH+'/general.xml',null);
 	var fns = [
-		this.createVertexTemplateEntry('shape=mxgraph.general.rectangle', 100, 100, '', 'Square', null, null, 'Square'),
-		this.createVertexTemplateEntry('shape=mxgraph.general.rectangle', 100, 50, '', 'Rectangle', null, null, 'Rectangle'),
-		this.createVertexTemplateEntry('shape=mxgraph.general.circle', 100, 100, '', 'Circle', null, null, 'Circle'),
-		this.createEdgeTemplateEntry('endArrow=none;rounded=0;fillColor=none', 50, 50, '', 'Line', null, lineTags + 'simple undirected plain blank no'),
-		this.createEdgeTemplateEntry('endArrow=none;dashed=1;roundend=0;fillColor=none', 50, 50, '', 'Dashed Line', null, lineTags + 'dashed undirected no'),
+		this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=#FFFFFF;strokeColor=#000000;', 100, 100, '', 'Square', null, null, 'Square'),
+		this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=#FFFFFF;strokeColor=#000000;', 100, 50, '', 'Rectangle', null, null, 'Rectangle'),
+		this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=#FFFFFF;strokeColor=#000000;', 100, 100, '', 'Circle', null, null, 'Circle'),
+		this.addEntry('line', mxUtils.bind(this, function()
+		{
+			var cell = new mxCell('', new mxGeometry(0, 0, 50, 50), 'endArrow=none;html=1;fillColor=none;strokeColor=#000000;rounded=0;');
+			cell.geometry.setTerminalPoint(new mxPoint(0, 50), true);
+			cell.geometry.setTerminalPoint(new mxPoint(50, 0), false);
+			cell.geometry.relative = true;
+			cell.edge = true;
+			cell.vertex = true;
+			return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Line');
+		})),
+		this.addEntry('dashedline', mxUtils.bind(this, function()
+		{
+			var cell = new mxCell('', new mxGeometry(0, 0, 50, 50), 'endArrow=none;html=1;fillColor=none;dashed=1;strokeColor=#000000;rounded=0;');
+			cell.geometry.setTerminalPoint(new mxPoint(0, 50), true);
+			cell.geometry.setTerminalPoint(new mxPoint(50, 0), false);
+			cell.geometry.relative = true;
+			cell.edge = true;
+			cell.vertex = true;
+			return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Dashed Line');
+		})),
 		this.addEntry('curve', mxUtils.bind(this, function()
 		{
-			var cell = new mxCell('', new mxGeometry(0, 0, 50, 50), 'curved=1;endArrow=none;html=1;fillColor=none;');
+			var cell = new mxCell('', new mxGeometry(0, 0, 50, 50), 'curved=1;endArrow=none;html=1;fillColor=none;strokeColor=#000000;');
 			cell.geometry.setTerminalPoint(new mxPoint(0, 50), true);
 			cell.geometry.setTerminalPoint(new mxPoint(50, 0), false);
 			cell.geometry.points = [new mxPoint(50, 50), new mxPoint(0, 0)];
 			cell.geometry.relative = true;
 			cell.edge = true;
-
+			cell.vertex = true;
 				return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Curve');
 		})),
 		this.createVertexTemplateEntry('text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;overflow=hidden;',

@@ -156,12 +156,20 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
         dashPatternNode.setAttribute('pattern', dashedPattern);
         fgNode.appendChild(dashPatternNode);
       }
+    } else {
+      var dashedNode = this.xmlDoc.createElement('dashed');
+      dashedNode.setAttribute('dashed', '0');
+      fgNode.appendChild(dashedNode);
     }
     //Per lo spessore della linea
     var strokeWidth = this.graph.getCellStyle(shape)[mxConstants.STYLE_STROKEWIDTH];
     if(strokeWidth!=null) {
       var strokeWidthNode = this.xmlDoc.createElement('strokewidth');
       strokeWidthNode.setAttribute('width', strokeWidth);
+      fgNode.appendChild(strokeWidthNode);
+    } else {
+      var strokeWidthNode = this.xmlDoc.createElement('strokewidth');
+      strokeWidthNode.setAttribute('width', '1');
       fgNode.appendChild(strokeWidthNode);
     }
     //Per il colore di contorno
@@ -486,24 +494,57 @@ ShapeCreator.prototype.createLineNode = function(shape, groupProp) {
   @return nodo xml che descrive la figura.
 */
 ShapeCreator.prototype.createSubStencilNode = function(shape, groupProp) {
+  var shapeNodes = this.xmlDoc.createDocumentFragment();
   var includeShapeNode;
   var shapeState = this.graph.view.getState(shape);
   var shapeName = this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE];
   if(shapeName=='mxgraph.general.rectangle') {
     includeShapeNode = this.xmlDoc.createElement('rect');
+    includeShapeNode.setAttribute('x', shapeState.origin.x-groupProp.x);
+    includeShapeNode.setAttribute('y', shapeState.origin.y-groupProp.y);
+
+    includeShapeNode.setAttribute('w', shapeState.cellBounds.width);
+    includeShapeNode.setAttribute('h', shapeState.cellBounds.height);
+    shapeNodes.appendChild(includeShapeNode);
   } else if(shapeName=='mxgraph.general.circle') {
     includeShapeNode = this.xmlDoc.createElement('ellipse');
+    includeShapeNode.setAttribute('x', shapeState.origin.x-groupProp.x);
+    includeShapeNode.setAttribute('y', shapeState.origin.y-groupProp.y);
+
+    includeShapeNode.setAttribute('w', shapeState.cellBounds.width);
+    includeShapeNode.setAttribute('h', shapeState.cellBounds.height);
+    shapeNodes.appendChild(includeShapeNode);
+  } else if(shapeName.includes('stencil(')) {
+    var base64 = shapeName.substring(8, shapeName.length-1);
+    var desc = this.graph.decompress(base64);
+    var foregroundChildrenXml = mxUtils.parseXml(desc).documentElement.getElementsByTagName('foreground')[0].childNodes;
+    var i;
+    for(i=0; i<foregroundChildrenXml.length; i++) {
+      if(foregroundChildrenXml[i].tagName == 'path') {
+        var pathChildrenXml = this.getAllElementChildNodes(foregroundChildrenXml[i]);
+        var j;
+        for(j=0; j<pathChildrenXml.length; j++) {
+          if(pathChildrenXml[j].getAttribute('x',null)!=null) {
+            pathChildrenXml[j].setAttribute('x',Number(pathChildrenXml[j].getAttribute('x','0'))+(shapeState.origin.x - groupProp.x));
+            pathChildrenXml[j].setAttribute('y',Number(pathChildrenXml[j].getAttribute('y','0'))+(shapeState.origin.y - groupProp.y));
+          }
+        }
+        shapeNodes.appendChild(foregroundChildrenXml[i]);
+      }
+    }
   } else {
     includeShapeNode = this.xmlDoc.createElement('include-shape');
     includeShapeNode.setAttribute('name', shapeName);
+    includeShapeNode.setAttribute('x', shapeState.origin.x-groupProp.x);
+    includeShapeNode.setAttribute('y', shapeState.origin.y-groupProp.y);
+
+    includeShapeNode.setAttribute('w', shapeState.cellBounds.width);
+    includeShapeNode.setAttribute('h', shapeState.cellBounds.height);
+    shapeNodes.appendChild(includeShapeNode);
   }
-  includeShapeNode.setAttribute('x', shapeState.origin.x-groupProp.x);
-  includeShapeNode.setAttribute('y', shapeState.origin.y-groupProp.y);
 
-  includeShapeNode.setAttribute('w', shapeState.cellBounds.width);
-  includeShapeNode.setAttribute('h', shapeState.cellBounds.height);
 
-  return includeShapeNode;
+  return shapeNodes;
 }
 
 /**
@@ -944,6 +985,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
       cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, 'mxgraph.general.rectangle');
       cell.vertex = true;
+      cell.connectable = false;
       cellsToAdd.push(cell);
       lastCells.push(cell);
     } else if(node.tagName == 'ellipse') {
@@ -952,6 +994,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
       cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, 'mxgraph.general.circle');
       cell.vertex = true;
+      cell.connectable = false;
       cellsToAdd.push(cell);
       lastCells.push(cell);
     } else if(node.tagName == 'path') {
@@ -997,9 +1040,13 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
             newGeo.sourcePoint = sourcePoint;
             newGeo.points = controlPoint;
             newGeo.targetPoint = terminalPoint;
+            newGeo.width = 1;
+            newGeo.height = 1;
+            newGeo.relative = true;
             cell.setGeometry(newGeo);
             cell.style = 'endArrow=none;curved=0;rounded=0;';
             cell.edge = true;
+            cell.vertex = true;
             cellsToAdd.push(cell);
             lastCells.push(cell);
           }
@@ -1033,9 +1080,13 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
             newGeo.sourcePoint = sourcePoint;
             newGeo.points = controlPoint;
             newGeo.targetPoint = terminalPoint;
+            newGeo.width = 1;
+            newGeo.height = 1;
+            newGeo.relative = true;
             cell.setGeometry(newGeo);
             cell.style = 'endArrow=none;curved=1;';
             cell.edge = true;
+            cell.vertex = true;
             cellsToAdd.push(cell);
             lastCells.push(cell);
           }
@@ -1044,9 +1095,13 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
           var newGeo = new mxGeometry();
           newGeo.sourcePoint = currentPoint;
           newGeo.targetPoint = new mxPoint(Number(pathNodes[0].getAttribute('x'))+geoCell.x, Number(pathNodes[0].getAttribute('y'))+geoCell.y);
+          newGeo.width = 1;
+          newGeo.height = 1;
+          newGeo.relative = true;
           cell.setGeometry(newGeo);
           cell.style = 'endArrow=none;curved=0;rounded=0;';
           cell.edge = true;
+          cell.vertex = true;
           cellsToAdd.push(cell);
           lastCells.push(cell);
         }

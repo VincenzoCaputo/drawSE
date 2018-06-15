@@ -1517,7 +1517,6 @@ ArrangePanel.prototype.addFill = function(container) {
 
 	var fillPanel = this.createCellColorOption(mxResources.get('fill'), fillKey, '#ffffff');
 	fillPanel.style.fontWeight = 'bold';
-
 	container.appendChild(fillPanel);
 
 	// Adds custom colors
@@ -4205,7 +4204,19 @@ StyleFormatPanel.prototype.addFill = function(container)
 		graph.setCellStyles(mxConstants.STYLE_GRADIENT_DIRECTION, gradientSelect.value, graph.getSelectionCells());
 		mxEvent.consume(evt);
 	});
-
+	if(graph.selectionContainsOnlyEdges()) {
+		fillPanel.style.paddingBottom = '20px';
+		this.addCheckBoxInput(fillPanel, 'Close', false, function(evt){
+				var cells = graph.getSelectionCells();
+				var shpCreator = new ShapeCreator(graph);
+				if(evt.target.checked) {
+					var cell = shpCreator.mergeShapes(cells, true, true);
+					cell.setValue(cell.createSymbolXmlNode());
+					cell.setAttribute('locked','1');
+					cell.connectable = false;
+				}
+		});
+	}
 	container.appendChild(fillPanel);
 	container.appendChild(gradientPanel);
 
@@ -4713,7 +4724,7 @@ StyleFormatPanel.prototype.addStroke = function(container)
 				mxUtils.br(container);
 			}
 
-			container.appendChild(perimeterPanel);
+			//container.appendChild(perimeterPanel);
 		}
 
 		var listener = mxUtils.bind(this, function(sender, evt, force)

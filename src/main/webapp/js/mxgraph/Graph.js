@@ -1030,6 +1030,7 @@ mxUtils.extend(Graph, mxGraph);
 			shapeCreator.mergeShapes(intersectCells, false, false);
 		}
 	}
+	this.refresh();
 	/*var cellsToMerge
 	var shapeCreator = new ShapeCreator(this);
 	var i;
@@ -1043,13 +1044,14 @@ mxUtils.extend(Graph, mxGraph);
 		*/
  Graph.prototype.showConstraints = function() {
 	 var stencils = this.getModel().filterDescendants(function(cell) {
-		 if(cell.vertex==true && !cell.isConstraint() && (cell.getStyle().includes('stencil(') || cell.getStyle().includes('group'))) {
+		 if(cell.vertex==true && !cell.isConstraint() && cell.getAttribute('locked','0')=='0' && (cell.getStyle().includes('stencil(') || cell.getStyle().includes('group'))) {
 			 return true;
 		 }
 	 });
 	 var i;
 	 for(i=0; i<stencils.length; i++) {
 		 var shapeCreator =new ShapeCreator(this);
+
 		 if(stencils[i].style.includes('stencil(')) {
 				shapeCreator.unmergeShape(stencils[i]);
 
