@@ -808,6 +808,32 @@ EditorUi = function(editor, container, lightbox)
 		}
 	}));
 
+	this.addListener('styleChanged', mxUtils.bind(this, function(sender, evt) {
+		var keys = evt.properties.keys;
+		if(keys.includes('fillColor') && graph.selectionContainsOnlyEdges()) {
+				var color = evt.properties.values[keys.indexOf('fillColor')];
+				var cells = evt.properties.cells;
+				var shpCreator = new ShapeCreator(graph);
+				var attr = shpCreator.mergeShapes(cells, true, true, color);
+				var base64 = attr.base64;
+				var groupProp = attr.shapeGeo;
+				var desc = graph.decompress(base64);
+		    var stencilToAdd = new mxStencil(mxUtils.parseXml(desc).documentElement);
+		    mxStencilRegistry.addStencil('filledpath'+cells[0].id, stencilToAdd);
+				/*cell.setValue(cell.createSymbolXmlNode());
+				cell.setAttribute('locked','1');*/
+				var v1;
+				graph.getModel().beginUpdate();
+			  try {
+			    v1 = graph.insertVertex(graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=filledpath'+cells[0].id+';');
+			    //Rimuovo gli elementi che ora fanno parte del simbolo
+			    graph.removeCells(cells);
+					v1.connectable = false;
+			  } finally {
+			    graph.getModel().endUpdate();
+			  }
+		}
+	}));
 	// Update font size and font family labels
 	if (this.toolbar != null)
 	{

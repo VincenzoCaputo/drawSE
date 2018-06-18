@@ -12,7 +12,7 @@ function ShapeCreator(graph) {
   @param stroke true se aggiungere lo sfondo alle linee spezzate, false altrimenti
   @param isPath true per creare un path unico per le linee, false altrimenti
 */
-ShapeCreator.prototype.mergeShapes = function(cellGroup, stroke, isPath) {
+ShapeCreator.prototype.mergeShapes = function(cellGroup, stroke, isPath, color) {
   var groupProp = this.getSizeAndPosition(cellGroup);
 
   //Creo il documento XML per lo shape
@@ -33,6 +33,11 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup, stroke, isPath) {
   if(isPath) { //Per creare un unico path di linee
     var path = this.getPathXml(cellGroup, groupProp, stroke);
     fgNode.appendChild(path);
+    if(color!=null) {
+      var fillColorNode = this.xmlDoc.createElement('fillcolor');
+      fillColorNode.setAttribute('color', color);
+      fgNode.appendChild(fillColorNode);
+    }
     fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
   } else {
     //Per ogni cella della selezione
@@ -52,7 +57,8 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup, stroke, isPath) {
   }
   root.appendChild(connectionsNode);
   root.appendChild(fgNode);
-  var v1;
+  var xmlBase64 = this.graph.compress(mxUtils.getXml(root));
+  /*var v1;
   this.graph.getModel().beginUpdate();
   try {
     //rappresento lo stencil come base64 per aggiungerlo allo style del mxCell prodotto
@@ -68,8 +74,8 @@ ShapeCreator.prototype.mergeShapes = function(cellGroup, stroke, isPath) {
 
   } finally {
     this.graph.getModel().endUpdate();
-  }
-  return v1;
+  }*/
+  return {base64: xmlBase64, shapeGeo: groupProp, text: vertex};
 }
 
 /**
@@ -517,7 +523,16 @@ ShapeCreator.prototype.createSubStencilNode = function(shape, groupProp) {
   } else if(shapeName.includes('stencil(')) {
     var base64 = shapeName.substring(8, shapeName.length-1);
     var desc = this.graph.decompress(base64);
-    var foregroundChildrenXml = mxUtils.parseXml(desc).documentElement.getElementsByTagName('foreground')[0].childNodes;
+    var stencilToAdd = new mxStencil(mxUtils.parseXml(desc).documentElement);
+    mxStencilRegistry.addStencil('filledpath'+shape.id, stencilToAdd);
+    var includeNode = this.xmlDoc.createElement('include-shape');
+    includeNode.setAttribute('name', 'filledpath'+shape.id);
+    includeNode.setAttribute('x',shapeState.origin.x-groupProp.x);
+    includeNode.setAttribute('y',shapeState.origin.y-groupProp.y);
+    includeNode.setAttribute('w',shapeState.cellBounds.width);
+    includeNode.setAttribute('h',shapeState.cellBounds.height);
+    shapeNodes.appendChild(includeNode);
+    /*var foregroundChildrenXml = mxUtils.parseXml(desc).documentElement.getElementsByTagName('foreground')[0].childNodes;
     var i;
     for(i=0; i<foregroundChildrenXml.length; i++) {
       if(foregroundChildrenXml[i].tagName == 'path') {
@@ -531,7 +546,7 @@ ShapeCreator.prototype.createSubStencilNode = function(shape, groupProp) {
         }
         shapeNodes.appendChild(foregroundChildrenXml[i]);
       }
-    }
+    }*/
   } else {
     includeShapeNode = this.xmlDoc.createElement('include-shape');
     includeShapeNode.setAttribute('name', shapeName);

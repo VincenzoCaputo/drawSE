@@ -250,7 +250,36 @@ Actions.prototype.init = function()
 	this.addAction('merge', function() {
 			var shapeCreator =new ShapeCreator(graph);
 			var selectionCells = graph.getSelectionCells();
-			shapeCreator.mergeShapes(selectionCells, false, false);
+			var cellsToTransform = new Array();
+			cellsToTransform = selectionCells;
+			/*var i;
+
+			for(i=0; i<selectionCells.length; i++) {
+				if(graph.getCellStyle(selectionCells[i])[mxConstants.STYLE_SHAPE].includes('stencil(')) {
+					cellsToTransform = cellsToTransform.concat(shapeCreator.unmergeShape(selectionCells[i]));
+
+					graph.view.getState(cellsToTransform[0], true).getCellBounds();
+				} else {
+					cellsToTransform.push(selectionCells[i]);
+				}
+			}
+			console.log(cellsToTransform);*/
+			var attr = shapeCreator.mergeShapes(cellsToTransform, false, false);
+			var groupProp = attr.shapeGeo;
+			var xmlBase64 = attr.base64;
+			graph.getModel().beginUpdate();
+		  try {
+		    v1 = graph.insertVertex(graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
+		    //Rimuovo gli elementi che ora fanno parte del simbolo
+		    graph.removeCells(cellsToTransform);
+		  } finally {
+		    graph.getModel().endUpdate();
+		  }
+			var vertexToGroup = attr.text;
+			if(vertexToGroup.length>0) {
+				vertexToGroup.push(v1);
+				graph.setSelectionCell(graph.groupCells(null, 0, vertexToGroup.reverse()));
+			}
 
 	});
 	this.addAction('unmerge', function() {

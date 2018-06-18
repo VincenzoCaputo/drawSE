@@ -1979,12 +1979,23 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 				if(evt.target.checked) {
 					if(graph.selectionContainsOnlyEdges()) {
 						var shCr = new ShapeCreator(graph);
-						var vertex = shCr.mergeShapes(selectedCells, true, true);
-						vertex.setConstraint();
-						vertex.addAreaConstraint();
-						vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_FILLCOLOR, '#CDEB8B'));
-						vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_STROKECOLOR, '#A6FF4C'));
-						vertex.setStyle(mxUtils.setStyle(vertex.style, mxConstants.STYLE_OPACITY, '60'));
+						var attr = shCr.mergeShapes(selectedCells, true, true);
+						var groupProp = attr.shapeGeo;
+						var xmlBase64 = attr.base64;
+						var v1;
+						graph.getModel().beginUpdate();
+					  try {
+					    v1 = graph.insertVertex(graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
+					    //Rimuovo gli elementi che ora fanno parte del simbolo
+					    graph.removeCells(selectedCells);
+					  } finally {
+					    graph.getModel().endUpdate();
+					  }
+						v1.setConstraint();
+						v1.addAreaConstraint();
+						v1.setStyle(mxUtils.setStyle(v1.style, mxConstants.STYLE_FILLCOLOR, '#CDEB8B'));
+						v1.setStyle(mxUtils.setStyle(v1.style, mxConstants.STYLE_STROKECOLOR, '#A6FF4C'));
+						v1.setStyle(mxUtils.setStyle(v1.style, mxConstants.STYLE_OPACITY, '60'));
 						graph.refresh();
 					} else {
 						selectedCells[0].addAreaConstraint();
@@ -4037,18 +4048,23 @@ StyleFormatPanel.prototype.init = function()
 	var graph = editor.graph;
 	var ss = this.format.getSelectionState();
 
-	if (!ss.containsImage || ss.style.shape == 'image')
+	if ((!ss.containsImage || ss.style.shape == 'image') && !ss.style.shape.includes('stencil'))
 	{
 		this.container.appendChild(this.addFill(this.createPanel()));
 	}
-	this.container.appendChild(this.addStroke(this.createPanel()));
+	if(!ss.style.shape.includes('stencil')) {
+		this.container.appendChild(this.addStroke(this.createPanel()));
+	}
+
 	if(graph.isShapeMode() && !graph.selectionContainsConstraints()) {
 
 			this.container.appendChild(this.addLineJumps(this.createPanel()));
 			var opacityPanel = this.createRelativeOption(mxResources.get('opacity'), mxConstants.STYLE_OPACITY, 41);
 			opacityPanel.style.paddingTop = '8px';
 			opacityPanel.style.paddingBottom = '8px';
-			this.container.appendChild(opacityPanel);
+			if(!ss.style.shape.includes('stencil')) {
+				this.container.appendChild(opacityPanel);
+			}
 			this.container.appendChild(this.addEffects(this.createPanel()));
 
 			var opsPanel = this.addEditOps(this.createPanel());
@@ -4150,6 +4166,7 @@ StyleFormatPanel.prototype.addFill = function(container)
 	var fillKey = (ss.style.shape == 'image') ? mxConstants.STYLE_IMAGE_BACKGROUND : mxConstants.STYLE_FILLCOLOR;
 
 	var fillPanel = this.createCellColorOption(mxResources.get('fill'), fillKey, '#ffffff');
+
 	fillPanel.style.fontWeight = 'bold';
 
 	var tmpColor = mxUtils.getValue(ss.style, fillKey, null);
@@ -4204,19 +4221,6 @@ StyleFormatPanel.prototype.addFill = function(container)
 		graph.setCellStyles(mxConstants.STYLE_GRADIENT_DIRECTION, gradientSelect.value, graph.getSelectionCells());
 		mxEvent.consume(evt);
 	});
-	if(graph.selectionContainsOnlyEdges()) {
-		fillPanel.style.paddingBottom = '20px';
-		this.addCheckBoxInput(fillPanel, 'Close', false, function(evt){
-				var cells = graph.getSelectionCells();
-				var shpCreator = new ShapeCreator(graph);
-				if(evt.target.checked) {
-					var cell = shpCreator.mergeShapes(cells, true, true);
-					cell.setValue(cell.createSymbolXmlNode());
-					cell.setAttribute('locked','1');
-					cell.connectable = false;
-				}
-		});
-	}
 	container.appendChild(fillPanel);
 	container.appendChild(gradientPanel);
 

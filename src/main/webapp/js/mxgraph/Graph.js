@@ -1027,7 +1027,22 @@ mxUtils.extend(Graph, mxGraph);
 					 	return mxUtils.intersects(perimeter1, perimeter2);
 				 }
 			 }));
-			shapeCreator.mergeShapes(intersectCells, false, false);
+			var attr = shapeCreator.mergeShapes(intersectCells, false, false);
+			var groupProp = attr.shapeGeo;
+			var xmlBase64 = attr.base64;
+			this.getModel().beginUpdate();
+		  try {
+		    v1 = this.insertVertex(this.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
+		    //Rimuovo gli elementi che ora fanno parte del simbolo
+		    this.removeCells(intersectCells);
+		  } finally {
+		    this.getModel().endUpdate();
+		  }
+			var vertexToGroup = attr.text;
+			if(vertexToGroup.length>0) {
+				vertexToGroup.push(v1);
+				this.setSelectionCell(this.groupCells(null, 0, vertexToGroup.reverse()));
+			}
 		}
 	}
 	this.refresh();
