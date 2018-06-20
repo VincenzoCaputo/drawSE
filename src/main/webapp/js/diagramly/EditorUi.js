@@ -2066,7 +2066,6 @@
 		if (doc.documentElement.nodeName == 'mxlibrary')
 		{
 			var images = JSON.parse(mxUtils.getTextContent(doc.documentElement));
-			console.log(doc.documentElement);
 			this.libraryLoaded(file, images, doc.documentElement.getAttribute('title'));
 		}
 		else
@@ -2335,40 +2334,54 @@
 
 			var addCells = mxUtils.bind(this, function(cells, bounds, evt, title)
 			{
+				var res = true;
 				if(title==null) {
-					title = mxUtils.prompt('Insert a name for the shape: ', '');
-				}
-				cells = graph.cloneCells(mxUtils.sortCells(graph.model.getTopmostCells(cells)));
-
-				// Translates cells to origin
-				for (var i = 0; i < cells.length; i++)
-				{
-					var geo = graph.getCellGeometry(cells[i]);
-
-					if (geo != null)
-					{
-						geo.translate(-bounds.x, -bounds.y);
+					title = mxUtils.prompt('Insert a name for the shape: ', 'NoName');
+					var i;
+					for(i=0; i<images.length; i++) {
+						if(images[i].title == title) {
+							res = mxUtils.confirm('This name is already used. You want replace this symbol?');
+							if(res) {
+								//Elimino il duplicato (da sostituire)
+								images.splice(i, 1);
+							}
+						}
 					}
 				}
+				if(title!=null && res) {
+					cells = graph.cloneCells(mxUtils.sortCells(graph.model.getTopmostCells(cells)));
 
-				contentDiv.appendChild(this.sidebar.createVertexTemplateFromCells(
-					cells, bounds.width, bounds.height, title || '', true, false, false));
+					// Translates cells to origin
+					for (var i = 0; i < cells.length; i++)
+					{
+						var geo = graph.getCellGeometry(cells[i]);
 
-				var xml = this.editor.graph.compress(mxUtils.getXml(this.editor.graph.encodeCells(cells)));
-				var entry = {xml: xml, w: bounds.width, h: bounds.height};
+						if (geo != null)
+						{
+							geo.translate(-bounds.x, -bounds.y);
+						}
+					}
+					contentDiv.appendChild(this.sidebar.createVertexTemplateFromCells(
+						cells, bounds.width, bounds.height, title || '', true, false, false));
 
-				if (title != null)
-				{
-					entry.title = title;
-				}
+					var xml = this.editor.graph.compress(mxUtils.getXml(this.editor.graph.encodeCells(cells)));
+					var entry = {xml: xml, w: bounds.width, h: bounds.height};
 
-				images.push(entry);
-				saveLibrary(evt);
+					if (title != null)
+					{
+						entry.title = title;
+					}
 
-				if (dropTarget != null && dropTarget.parentNode != null && images.length > 0)
-				{
-					dropTarget.parentNode.removeChild(dropTarget);
-					dropTarget = null;
+					images.push(entry);
+					saveLibrary(evt);
+
+					if (dropTarget != null && dropTarget.parentNode != null && images.length > 0)
+					{
+						dropTarget.parentNode.removeChild(dropTarget);
+						dropTarget = null;
+					}
+					//Salvo la palette in modo tale che la sostituzione sia visibile
+					this.saveLibrary(file.title, images, file, App.MODE_BROWSER);
 				}
 			});
 

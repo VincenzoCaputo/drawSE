@@ -967,50 +967,8 @@ mxUtils.extend(Graph, mxGraph);
 			 return true;
 		 }
 	 }));
-
-	 var containerCell = null;
-	 var containerCellArea = null;
-	 //array di simboli da trasformare in XML
-	 var parentCells = [];
-	 var i;
-	 //Per ogni punto di attacco, trovo il simbolo contenitore più grande
-	 for(i=0; i<cellsConstraint.length; i++) {
-		 var j=0;
-		 for(j=0; j<cells.length; j++) {
-			 //Ricavo il rettangolo circoscritto al simbolo
-			 var parentPerimeter = this.view.getState(cells[j]).getPerimeterBounds(10);
-			 //Ricavo il rettangolo circoscritto al simbolo constraint
-			 var constraintPerimeter = this.view.getState(cellsConstraint[i]).getPerimeterBounds();
-			 if(mxUtils.contains(parentPerimeter,constraintPerimeter.x, constraintPerimeter.y)) {
-				 if(containerCell == null) {
-					 containerCell = j;
-					 containerCellArea = parentPerimeter.width*parentPerimeter.height;
-				 } else {
-					 var area = parentPerimeter.width*parentPerimeter.height;
-					 if(area>containerCellArea) {
-						 containerCellArea = area;
-						 containerCell = j;
-					 }
-				 }
-			 }
-		 }
-		 if(!parentCells.includes(cells[containerCell])) {
-		 		parentCells.push(cells[containerCell]);
-	 	 }
-		 if(containerCell!=null) {
-			 if(!cells[containerCell].edge) {
-					var symbolPosition = {x: cells[containerCell].getGeometry().x, y: cells[containerCell].getGeometry().y};
-					cellsConstraint[i].getGeometry().translate(-symbolPosition.x, -symbolPosition.y);
-			 }
-			 this.getModel().add(cells[containerCell], cellsConstraint[i]);
-			 containerCell = null;
-			 containerCellArea = null;
-	 	 } else {
-			 cellsConstraint[i].setVisible(false);
-		 }
-
-	 }
-
+	 var parentCells = this.autoAttachConstraints(cellsConstraint, cells);
+	 //Ricavo tutti i simboli parent oppure tutti i simboli con i contorni d'attacco attivi
 	 var parentCellsToTransform = this.getModel().filterDescendants(function(cell) {
 		 if(parentCells.includes(cell) || ((cell.vertex || cell.edge) && !cell.isConstraint() && cell.isOutlineConstraint())) {
 			 return true;
@@ -1018,6 +976,10 @@ mxUtils.extend(Graph, mxGraph);
 	 });
 	 var shapeCreator =new ShapeCreator(this);
 	 var i;
+	 /*
+	 Per ogni simbolo parent mi ricavo tutti gli altri simboli che si intersecano con esso, presumendo
+	 che tali simboli andranno a far parte di un unico simbolo.
+	 */
 	 for(i=0; i<parentCellsToTransform.length; i++) {
 		 if(this.view.getState(parentCellsToTransform[i])!=null) {
 			 var intersectCells = this.getModel().filterDescendants(mxUtils.bind(this, function(cell) {
@@ -1028,6 +990,7 @@ mxUtils.extend(Graph, mxGraph);
 				 }
 			 }));
 			var attr = shapeCreator.mergeShapes(intersectCells, false, false);
+			//Inserisco il nuovo simbolo creato
 			var groupProp = attr.shapeGeo;
 			var xmlBase64 = attr.base64;
 			this.getModel().beginUpdate();
@@ -1038,6 +1001,7 @@ mxUtils.extend(Graph, mxGraph);
 		  } finally {
 		    this.getModel().endUpdate();
 		  }
+			//Per evitare che il testo venga nascosto dal simbolo
 			var vertexToGroup = attr.text;
 			if(vertexToGroup.length>0) {
 				vertexToGroup.push(v1);
@@ -1046,13 +1010,65 @@ mxUtils.extend(Graph, mxGraph);
 		}
 	}
 	this.refresh();
-	/*var cellsToMerge
-	var shapeCreator = new ShapeCreator(this);
-	var i;
-	for(i=0; i<cellsToMerge.length; i++) {
-		shapeCreator.mergeShapes(cellsToMerge[i], false, false);
-	}*/
  }
+
+
+/**
+*/
+Graph.prototype.autoAttachConstraints = function(cellsConstraint, cells) {
+	//Simbolo contenitore più grande (indice dell'array di cells)
+	var containerCell = null;
+	//Area del simbolo contenitore più grande
+	var containerCellArea = null;
+	//array di simboli da trasformare in XML
+	var parentCells = [];
+	var i;
+	//Per ogni punto di attacco, trovo il simbolo contenitore più grande
+	for(i=0; i<cellsConstraint.length; i++) {
+		var j=0;
+		for(j=0; j<cells.length; j++) {
+			//Ricavo il rettangolo circoscritto al simbolo
+			var parentPerimeter = this.view.getState(cells[j]).getPerimeterBounds(10);
+			//Ricavo il rettangolo circoscritto al simbolo constraint
+			var constraintPerimeter = this.view.getState(cellsConstraint[i]).getPerimeterBounds();
+			//Controllo se il punto di attacco è all'interno del perimetro del simbolo corrente
+			if(mxUtils.contains(parentPerimeter,constraintPerimeter.x, constraintPerimeter.y)) {
+				//Considero il simbolo contenitore con l'area più grande
+				if(containerCell == null) {
+					containerCell = j;
+					containerCellArea = parentPerimeter.width*parentPerimeter.height;
+				} else {
+					var area = parentPerimeter.width*parentPerimeter.height;
+					if(area>containerCellArea) {
+						containerCellArea = area;
+						containerCell = j;
+					}
+				}
+			}
+		}
+		//Evito i duplicati
+		if(!parentCells.includes(cells[containerCell])) {
+			 parentCells.push(cells[containerCell]);
+		}
+		//Se il punto di attacco è all'interno di un simbolo allora lo aggiungo come figlio a tale simbolo
+		//Altrimenti il punto d'attacco viene nascosto
+		if(containerCell!=null) {
+			/*Se il simbolo padre non è un edge, quando il punto di attacco viene associato ad un altro simbolo,
+			avrà una posizione relativa rispetto al simbolo parent. Pertanto è necessario traslare il punto di attacco
+			in modo tale da lasciare invariata la sua posizione corrente*/
+			if(!cells[containerCell].edge) {
+				 var symbolPosition = {x: cells[containerCell].getGeometry().x, y: cells[containerCell].getGeometry().y};
+				 cellsConstraint[i].getGeometry().translate(-symbolPosition.x, -symbolPosition.y);
+			}
+			this.getModel().add(cells[containerCell], cellsConstraint[i]);
+			containerCell = null;
+			containerCellArea = null;
+		} else {
+			cellsConstraint[i].setVisible(false);
+		}
+	}
+	return parentCells;
+}
 
  /**
 	*	Questa funzione mostra tutti i punti di attacco nascosti
@@ -1112,7 +1128,11 @@ mxUtils.extend(Graph, mxGraph);
 			 }
 		 }
 	 } else {
-		 return true;
+		 if(this.getCellStyle(cell)[mxConstants.STYLE_MOVABLE]=='0') {
+			 return false;
+		 } else {
+		 	return true;
+		}
 	 }
  };
  Graph.prototype.isCellRotatable = function(cell) {
@@ -1127,7 +1147,11 @@ mxUtils.extend(Graph, mxGraph);
 			 }
 		 }
 	 } else {
-		 return true;
+		 if(this.getCellStyle(cell)[mxConstants.STYLE_ROTATABLE]=='0') {
+			 return false;
+		 } else {
+		 	return true;
+		}
 	 }
  };
  Graph.prototype.isTerminalPointMovable = function(cell) {
@@ -1203,7 +1227,11 @@ mxUtils.extend(Graph, mxGraph);
 			 }
 		 }
 	 } else {
-		 return true;
+		 if(this.getCellStyle(cell)[mxConstants.STYLE_RESIZABLE]=='0') {
+			 return false;
+		 } else {
+		 	return true;
+		}
 	 }
  };
 

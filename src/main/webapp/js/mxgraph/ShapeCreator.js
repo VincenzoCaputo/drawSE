@@ -520,33 +520,14 @@ ShapeCreator.prototype.createSubStencilNode = function(shape, groupProp) {
     includeShapeNode.setAttribute('w', shapeState.cellBounds.width);
     includeShapeNode.setAttribute('h', shapeState.cellBounds.height);
     shapeNodes.appendChild(includeShapeNode);
-  } else if(shapeName.includes('stencil(')) {
-    var base64 = shapeName.substring(8, shapeName.length-1);
-    var desc = this.graph.decompress(base64);
-    var stencilToAdd = new mxStencil(mxUtils.parseXml(desc).documentElement);
-    mxStencilRegistry.addStencil('filledpath'+shape.id, stencilToAdd);
+  } else if(shapeName.includes('filledpath')) {
     var includeNode = this.xmlDoc.createElement('include-shape');
-    includeNode.setAttribute('name', 'filledpath'+shape.id);
+    includeNode.setAttribute('name', shapeName);
     includeNode.setAttribute('x',shapeState.origin.x-groupProp.x);
     includeNode.setAttribute('y',shapeState.origin.y-groupProp.y);
     includeNode.setAttribute('w',shapeState.cellBounds.width);
     includeNode.setAttribute('h',shapeState.cellBounds.height);
     shapeNodes.appendChild(includeNode);
-    /*var foregroundChildrenXml = mxUtils.parseXml(desc).documentElement.getElementsByTagName('foreground')[0].childNodes;
-    var i;
-    for(i=0; i<foregroundChildrenXml.length; i++) {
-      if(foregroundChildrenXml[i].tagName == 'path') {
-        var pathChildrenXml = this.getAllElementChildNodes(foregroundChildrenXml[i]);
-        var j;
-        for(j=0; j<pathChildrenXml.length; j++) {
-          if(pathChildrenXml[j].getAttribute('x',null)!=null) {
-            pathChildrenXml[j].setAttribute('x',Number(pathChildrenXml[j].getAttribute('x','0'))+(shapeState.origin.x - groupProp.x));
-            pathChildrenXml[j].setAttribute('y',Number(pathChildrenXml[j].getAttribute('y','0'))+(shapeState.origin.y - groupProp.y));
-          }
-        }
-        shapeNodes.appendChild(foregroundChildrenXml[i]);
-      }
-    }*/
   } else {
     includeShapeNode = this.xmlDoc.createElement('include-shape');
     includeShapeNode.setAttribute('name', shapeName);
@@ -908,7 +889,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       var cell = new mxCell(nodeCell, new mxGeometry(x, y, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
       cell.vertex = true;
       cell.connectable = false;
-      cell.visible = false;
+      //cell.visible = false;
       cellsToAdd.push(cell);
     } else if(node.tagName == 'lineattack' || node.tagName == 'curveattack') {
       var points = JSON.parse(this.graph.decompress(node.getAttribute('x')));
@@ -935,7 +916,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       var cell = new mxCell(nodeCell, lineGeometry, style);
       cell.edge = true;
       cell.connectable = false;
-      cell.visible = false;
+      //cell.visible = false;
       cellsToAdd.push(cell);
     } else if(node.tagName == 'areaattack') {
       var stencil = node.getAttribute('stencil');
@@ -960,7 +941,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       var cell = new mxCell(nodeCell, areaGeometry, style);
       cell.vertex = true;
       cell.connectable = false;
-      cell.visible = false;
+      //cell.visible = false;
       cellsToAdd.push(cell);
     }
   }
@@ -1142,7 +1123,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
     }
   }
   this.graph.getModel().beginUpdate();
-  this.graph.addCells(cellsToAdd);
+  cellsToAdd = this.graph.addCells(cellsToAdd);
   this.graph.removeCells([cellToTransform]);
   this.graph.getModel().endUpdate();
   this.graph.refresh();

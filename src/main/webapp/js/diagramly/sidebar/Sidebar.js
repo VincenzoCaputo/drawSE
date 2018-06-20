@@ -733,6 +733,9 @@
 			if(localStorage.getItem(title)==null) {
 				var emptyXml = editor.emptyLibraryXml;
 				editor.loadLibrary(new StorageLibrary(editor, emptyXml, title));
+			} else {
+				//per testing
+				//localStorage.removeItem(title);
 			}
 		});
 		addNewPaletteButton.id = 'newPaletteButton';

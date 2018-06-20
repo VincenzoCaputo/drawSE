@@ -248,22 +248,42 @@ Actions.prototype.init = function()
 	this.addAction('removeFromGroup', function() { graph.removeCellsFromParent(); });
 	//Aggiungo action per la creazione di uno shape
 	this.addAction('merge', function() {
-			var shapeCreator =new ShapeCreator(graph);
+			var shapeCreator = new ShapeCreator(graph);
 			var selectionCells = graph.getSelectionCells();
+			var cellsToMerge = new Array();
 			var cellsToTransform = new Array();
-			cellsToTransform = selectionCells;
-			/*var i;
+			var i;
 
 			for(i=0; i<selectionCells.length; i++) {
-				if(graph.getCellStyle(selectionCells[i])[mxConstants.STYLE_SHAPE].includes('stencil(')) {
-					cellsToTransform = cellsToTransform.concat(shapeCreator.unmergeShape(selectionCells[i]));
-
-					graph.view.getState(cellsToTransform[0], true).getCellBounds();
+				if(selectionCells[i].style.includes('group')) {
+					graph.setSelectionCell(selectionCells[i]);
+					cellsToMerge.concat(graph.ungroupCells());
 				} else {
-					cellsToTransform.push(selectionCells[i]);
+					cellsToMerge.push(selectionCells[i]);
 				}
 			}
-			console.log(cellsToTransform);*/
+			var i;
+			for(i=0; i<cellsToMerge.length; i++) {
+				if(graph.getCellStyle(cellsToMerge[i])[mxConstants.STYLE_SHAPE].includes('stencil(')) {
+					var cells = shapeCreator.unmergeShape(cellsToMerge[i]);
+					//Effettuo l'attach dei punti di attacco ai simboli
+					var constraintCells = graph.getModel().filterCells(cells, function(cell) {
+						if(cell.isConstraint()) {
+							return true;
+						}
+					});
+					var symbolCells = graph.getModel().filterCells(cells, function(cell) {
+						if((cell.vertex || cell.edge) && !cell.isConstraint() && !cell.style.includes('text')) {
+							return true;
+						}
+					});
+					graph.autoAttachConstraints(constraintCells, symbolCells);
+					cellsToTransform = cellsToTransform.concat(symbolCells);
+				} else {
+					cellsToTransform.push(cellsToMerge[i]);
+				}
+
+			}
 			var attr = shapeCreator.mergeShapes(cellsToTransform, false, false);
 			var groupProp = attr.shapeGeo;
 			var xmlBase64 = attr.base64;
@@ -277,8 +297,16 @@ Actions.prototype.init = function()
 		  }
 			var vertexToGroup = attr.text;
 			if(vertexToGroup.length>0) {
+				var i;
+				//Rendo il testo immobile
+				for(i=0; i<vertexToGroup.length; i++) {
+					vertexToGroup[i].style = mxUtils.setStyle(vertexToGroup[i].style, mxConstants.STYLE_MOVABLE, 0);
+					vertexToGroup[i].style = mxUtils.setStyle(vertexToGroup[i].style, mxConstants.STYLE_ROTATABLE, 0);
+					vertexToGroup[i].style = mxUtils.setStyle(vertexToGroup[i].style, mxConstants.STYLE_RESIZABLE, 0);
+				}
 				vertexToGroup.push(v1);
 				graph.setSelectionCell(graph.groupCells(null, 0, vertexToGroup.reverse()));
+
 			}
 
 	});
@@ -298,14 +326,25 @@ Actions.prototype.init = function()
 						cellToTransform = childCells[i];
 					} else {
 						textNodes.push(childCells[i]);
+						childCells[i].style = mxUtils.setStyle(childCells[i].style, mxConstants.STYLE_MOVABLE, 1);
+						childCells[i].style = mxUtils.setStyle(childCells[i].style, mxConstants.STYLE_ROTATABLE, 1);
+						childCells[i].style = mxUtils.setStyle(childCells[i].style, mxConstants.STYLE_RESIZABLE, 1);
 					}
 				}
 			} else {
 				cellToTransform = selectionCell;
 			}
-			shapeCreator.unmergeShape(cellToTransform);
+		  var cellsAdded = shapeCreator.unmergeShape(cellToTransform);
+			var i;
+			for(i=0; i<cellsAdded.length; i++) {
+				if(cellsAdded[i].isConstraint()) {
+					cellsAdded[i].visible = false;
+				}
+			}
+			graph.refresh();
 			//Porto in avanti il testo per renderlo visibile
 			graph.orderCells(false, textNodes);
+
 	});
 	// Adds action
 	this.addAction('edit', function()
