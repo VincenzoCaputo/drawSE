@@ -886,6 +886,7 @@ Graph = function(container, model, renderHint, stylesheet, themes)
 			return me;
 		};
 	}
+
 };
 
 
@@ -951,12 +952,12 @@ mxUtils.extend(Graph, mxGraph);
 		}
  }
 	 /**
-	*	Questa funzione nasconde tutti i punti di attacco
+	*	Questa funzione nasconde tutti i punti di attacco ed effettua l'operazione di merge
 		*/
  Graph.prototype.hideConstraints = function() {
-	 //Ricavo tutti i simboli che rappresentano punti di attacco
-	 var cellsConstraint = this.getModel().filterDescendants(function(cell) {
-		 if(cell.isConstraint() && cell.getParent().id=='1') {
+	 //Ricavo tutti i simboli
+	 var allCells = this.getModel().filterDescendants(function(cell) {
+		 if((cell.vertex || cell.edge)) {
 			 return true;
 		 }
 	 });
@@ -967,55 +968,85 @@ mxUtils.extend(Graph, mxGraph);
 			 return true;
 		 }
 	 }));
-	 var parentCells = this.autoAttachConstraints(cellsConstraint, cells);
-	 //Ricavo tutti i simboli parent oppure tutti i simboli con i contorni d'attacco attivi
-	 var parentCellsToTransform = this.getModel().filterDescendants(function(cell) {
-		 if(parentCells.includes(cell) || ((cell.vertex || cell.edge) && !cell.isConstraint() && cell.isOutlineConstraint())) {
-			 return true;
-		 }
-	 });
 	 var shapeCreator =new ShapeCreator(this);
 	 var i;
 	 /*
 	 Per ogni simbolo parent mi ricavo tutti gli altri simboli che si intersecano con esso, presumendo
 	 che tali simboli andranno a far parte di un unico simbolo.
 	 */
-	 for(i=0; i<parentCellsToTransform.length; i++) {
-		 if(this.view.getState(parentCellsToTransform[i])!=null) {
-			 var intersectCells = this.getModel().filterDescendants(mxUtils.bind(this, function(cell) {
-				 if((cell.vertex || cell.edge) && !cell.isConstraint()) {
-					  var perimeter1 = this.view.getState(cell).getPerimeterBounds(5);
-						var perimeter2 = this.view.getState(parentCellsToTransform[i]).getPerimeterBounds(5);
-					 	return mxUtils.intersects(perimeter1, perimeter2);
-				 }
-			 }));
-			var attr = shapeCreator.mergeShapes(intersectCells, false, false);
-			//Inserisco il nuovo simbolo creato
-			var groupProp = attr.shapeGeo;
-			var xmlBase64 = attr.base64;
-			this.getModel().beginUpdate();
-		  try {
-		    v1 = this.insertVertex(this.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
-		    //Rimuovo gli elementi che ora fanno parte del simbolo
-		    this.removeCells(intersectCells);
-		  } finally {
-		    this.getModel().endUpdate();
-		  }
-			//Per evitare che il testo venga nascosto dal simbolo
-			var vertexToGroup = attr.text;
-			if(vertexToGroup.length>0) {
-				vertexToGroup.push(v1);
-				this.setSelectionCell(this.groupCells(null, 0, vertexToGroup.reverse()));
+	 var intersectCells = new Array();
+	 for(i=0; i<cells.length; i++) {
+		 if(allCells.indexOf(cells[i]>=0)) {
+			 if(this.view.getState(cells[i])!=null) {
+				intersectCells = this.getCloseSymbols(cells[i], allCells, new Array());
+				intersectCells.push(cells[i]);
+				var attr = shapeCreator.mergeShapes(intersectCells, false, false);
+				//Inserisco il nuovo simbolo creato
+				var groupProp = attr.shapeGeo;
+				var xmlBase64 = attr.base64;
+				this.getModel().beginUpdate();
+			  try {
+			    v1 = this.insertVertex(this.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
+			    //Rimuovo gli elementi che ora fanno parte del simbolo
+			    this.removeCells(intersectCells);
+			  } finally {
+			    this.getModel().endUpdate();
+			  }
+				//Per evitare che il testo venga nascosto dal simbolo
+				var vertexToGroup = attr.text;
+				if(vertexToGroup.length>0) {
+					vertexToGroup.push(v1);
+					this.setSelectionCell(this.groupCells(null, 0, vertexToGroup.reverse()));
+				}
 			}
 		}
+	}
+
+	//Ricavo tutti i punti di attacco non associati e li rendo invisibili
+	var constraints = this.getModel().filterDescendants(mxUtils.bind(this, function(cell) {
+		if((cell.vertex || cell.edge) && cell.isConstraint()) {
+			return true;
+		}
+	}));
+	var i;
+	for(i=0; i<constraints.length; i++) {
+		constraints[i].visible = false;
 	}
 	this.refresh();
  }
 
+/**
+	Questa funzione, dato un simbolo, restituisce i simboli più vicini
+*/
+Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
+	delete allCells[allCells.indexOf(cellCompare)];
+	var closestCells = this.getModel().filterDescendants(mxUtils.bind(this, function(cell) {
+		if((cell.vertex || cell.edge) && allCells.indexOf(cell)>=0) {
+			 var perimeter1 = this.view.getState(cell).getPerimeterBounds(5);
+			 var perimeter2 = this.view.getState(cellCompare).getPerimeterBounds(5);
+			 if(mxUtils.intersects(perimeter1, perimeter2)) {
+				 delete allCells[allCells.indexOf(cell)];
+				 return true;
+			 } else {
+				 return false;
+			 }
+		}
+	}));
+
+	var j;
+	var cs = new Array();
+	//Per ogni simbolo vicino, trovo ricorsivamente i simboli vicini
+	for(j=0; j<closestCells.length; j++) {
+		cs = cs.concat(this.getCloseSymbols(closestCells[j], allCells, groupCells));
+
+	}
+	groupCells = closestCells.concat(cs);
+	return groupCells;
+}
 
 /**
 */
-Graph.prototype.autoAttachConstraints = function(cellsConstraint, cells) {
+/*Graph.prototype.autoAttachConstraints = function(cellsConstraint, cells) {
 	//Simbolo contenitore più grande (indice dell'array di cells)
 	var containerCell = null;
 	//Area del simbolo contenitore più grande
@@ -1056,7 +1087,7 @@ Graph.prototype.autoAttachConstraints = function(cellsConstraint, cells) {
 			/*Se il simbolo padre non è un edge, quando il punto di attacco viene associato ad un altro simbolo,
 			avrà una posizione relativa rispetto al simbolo parent. Pertanto è necessario traslare il punto di attacco
 			in modo tale da lasciare invariata la sua posizione corrente*/
-			if(!cells[containerCell].edge) {
+		/*	if(!cells[containerCell].edge) {
 				 var symbolPosition = {x: cells[containerCell].getGeometry().x, y: cells[containerCell].getGeometry().y};
 				 cellsConstraint[i].getGeometry().translate(-symbolPosition.x, -symbolPosition.y);
 			}
@@ -1068,7 +1099,7 @@ Graph.prototype.autoAttachConstraints = function(cellsConstraint, cells) {
 		}
 	}
 	return parentCells;
-}
+}*/
 
  /**
 	*	Questa funzione mostra tutti i punti di attacco nascosti
@@ -1140,14 +1171,14 @@ Graph.prototype.autoAttachConstraints = function(cellsConstraint, cells) {
 		 if(!cell.isConstraint()) {
 			 return false;
 		 } else {
-			 if(cell.getStyle().includes('ellipse') || cell.getParent()!=this.getDefaultParent()) {
+			 if(cell.getStyle().includes('shape=') || cell.getStyle().includes('ellipse') || cell.getParent()!=this.getDefaultParent()) {
 				 return false;
 			 } else {
 				 return true;
 			 }
 		 }
 	 } else {
-		 if(this.getCellStyle(cell)[mxConstants.STYLE_ROTATABLE]=='0') {
+		 if(cell.getStyle().includes('shape=') || this.getCellStyle(cell)[mxConstants.STYLE_ROTATABLE]=='0') {
 			 return false;
 		 } else {
 		 	return true;

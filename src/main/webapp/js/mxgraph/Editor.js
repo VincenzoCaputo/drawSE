@@ -627,6 +627,16 @@ Editor.prototype.createUndoManager = function()
 		}
 
 		graph.setSelectionCells(cells);
+		var constraint = graph.getModel().filterDescendants(function(cell) {
+ 		 if(cell.isConstraint()) {
+ 			 return true;
+ 		 }
+ 	 });
+	 var i;
+	 for(i=0; i<constraint.length; i++) {
+		 constraint[i].visible = false;
+	 }
+	 graph.refresh();
 	};
 
 	undoMgr.addListener(mxEvent.UNDO, undoHandler);

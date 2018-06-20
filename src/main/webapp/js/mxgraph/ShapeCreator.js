@@ -132,147 +132,89 @@ ShapeCreator.prototype.getShapeXml = function(shape, groupProp, stroke) {
     fgNode.appendChild(attr);
   } else {
     if(shapeType == shape.LINE_SHAPE_TYPE){
-      //Aggiungo un nodo path
-      fgNode.appendChild(this.createLineNode(shape, groupProp));
-      if(shape.isOutlineConstraint()) {
-        constraintNodes.appendChild(this.createLineConstraintNode(shape, shape, groupProp));
+      if(shape.isConstraint()) {
+        constraintNodes.appendChild(this.createLineConstraintNode(shape, groupProp));
+      } else {
+        //Aggiungo un nodo path
+        fgNode.appendChild(this.createLineNode(shape, groupProp));
+        if(shape.isOutlineConstraint()) {
+          constraintNodes.appendChild(this.createLineConstraintNode(shape, groupProp));
+        }
       }
     } else if(shapeType == shape.STENCIL_SHAPE_TYPE) {
-
-      fgNode.appendChild(this.createSubStencilNode(shape, groupProp));
-      if(shape.isOutlineConstraint()) {
-        constraintNodes.appendChild(this.createStencilOutlineConstraintNode(shape, groupProp));
+      if(shape.isConstraint()) {
+        if(shape.isAreaConstraint()) {
+          constraintNodes.appendChild(this.createAreaConstraintNode(shape, groupProp));
+        } else if(shape.isOutlineConstraint()){
+          constraintNodes.appendChild(this.createStencilOutlineConstraintNode(shape, groupProp));
+        }
+      } else {
+        fgNode.appendChild(this.createSubStencilNode(shape, groupProp));
+        if(shape.isOutlineConstraint()) {
+          constraintNodes.appendChild(this.createStencilOutlineConstraintNode(shape, groupProp));
+        }
       }
     } else if(shapeType == shape.CURVE_SHAPE_TYPE) {
-      fgNode.appendChild(this.createCurveNode(shape, groupProp));
-      if(shape.isOutlineConstraint()) {
-        constraintNodes.appendChild(this.createCurveConstraintNode(shape, shape, groupProp));
+      if(shape.isConstraint()) {
+        constraintNodes.appendChild(this.createCurveConstraintNode(shape, groupProp));
+      } else {
+        fgNode.appendChild(this.createCurveNode(shape, groupProp));
+        if(shape.isOutlineConstraint()) {
+          constraintNodes.appendChild(this.createCurveConstraintNode(shape, groupProp));
+        }
       }
     } else if(shapeType == shape.IMAGE_SHAPE_TYPE) {
       fgNode.appendChild(this.createImageNode(shape, groupProp));
+    } else if(shapeType == shape.POINT_SHAPE_TYPE) {
+      constraintNodes.appendChild(this.createPointConstraintNode(shape, groupProp));
     }
-
-    if(this.graph.getCellStyle(shape)[mxConstants.STYLE_DASHED]) {
-      var dashedNode = this.xmlDoc.createElement('dashed');
-      dashedNode.setAttribute('dashed', '1');
-      fgNode.appendChild(dashedNode);
-      var dashedPattern = this.graph.getCellStyle(shape)['dashPattern'];
-      if(dashedPattern!=null) {
-        var dashPatternNode = this.xmlDoc.createElement('dashpattern');
-        dashPatternNode.setAttribute('pattern', dashedPattern);
-        fgNode.appendChild(dashPatternNode);
-      }
-    } else {
-      var dashedNode = this.xmlDoc.createElement('dashed');
-      dashedNode.setAttribute('dashed', '0');
-      fgNode.appendChild(dashedNode);
-    }
-    //Per lo spessore della linea
-    var strokeWidth = this.graph.getCellStyle(shape)[mxConstants.STYLE_STROKEWIDTH];
-    if(strokeWidth!=null) {
-      var strokeWidthNode = this.xmlDoc.createElement('strokewidth');
-      strokeWidthNode.setAttribute('width', strokeWidth);
-      fgNode.appendChild(strokeWidthNode);
-    } else {
-      var strokeWidthNode = this.xmlDoc.createElement('strokewidth');
-      strokeWidthNode.setAttribute('width', '1');
-      fgNode.appendChild(strokeWidthNode);
-    }
-    //Per il colore di contorno
-    var strokeColorNode = this.xmlDoc.createElement('strokecolor');
-    strokeColorNode.setAttribute('color',this.graph.getCellStyle(shape)[mxConstants.STYLE_STROKECOLOR]);
-    fgNode.appendChild(strokeColorNode);
-
-    //Per il colore di riempimento
-    var fillColor=this.graph.getCellStyle(shape)[mxConstants.STYLE_FILLCOLOR];
-
-    if(fillColor!=null && stroke==false) {
-      var fillColorNode = this.xmlDoc.createElement('fillcolor');
-      fillColorNode.setAttribute('color',fillColor);
-      fgNode.appendChild(fillColorNode);
-      fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
-    } else if(stroke==false){
-      fgNode.appendChild(this.xmlDoc.createElement('stroke'));
-    } else if(stroke) {
-      fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
-    }
-
-
-  }
-  //Aggiungo eventuali punti di attacco attached
-  if(shape.getChildCount()>0 && shapeType!=shape.GROUP_SHAPE_TYPE) {
-    var attachedPoints = shape.children;
-    var j;
-    for(j=0; j<attachedPoints.length; j++) {
-      if(attachedPoints[j].isConstraint()) {
-        var constraintNode;
-        if(attachedPoints[j].style.includes('ellipse')) {
-          constraintNode = this.createPointConstraintNode(shape, attachedPoints[j], groupProp);
-        } else if(attachedPoints[j].edge) {
-          if(attachedPoints[j].getShapeType()==shape.LINE_SHAPE_TYPE) {
-            constraintNode = this.createLineConstraintNode(shape, attachedPoints[j], groupProp);
-          } else if(attachedPoints[j].getShapeType() == shape.CURVE_SHAPE_TYPE) {
-            constraintNode = this.createCurveConstraintNode(shape, attachedPoints[j], groupProp);
-          }
-        } else if(attachedPoints[j].getShapeType() == shape.STENCIL_SHAPE_TYPE) {
-          if(attachedPoints[j].isAreaConstraint()) {
-            var stencil = this.graph.getCellStyle(attachedPoints[j])[mxConstants.STYLE_SHAPE];
-
-            var ctx = this.createCanvas(attachedPoints[j]);
-            var relX;
-            var relY;
-            if(shape.edge) {
-              relX = attachedPoints[j].getGeometry().x - groupProp.x;
-              relY = attachedPoints[j].getGeometry().y - groupProp.y;
-            } else {
-              relX = attachedPoints[j].getGeometry().x + shape.getGeometry().x - groupProp.x;
-              relY = attachedPoints[j].getGeometry().y + shape.getGeometry().y - groupProp.y;
-            }
-            //Per ogni punto controllo se tale punto è nel path
-            var constraintNode = this.xmlDoc.createDocumentFragment();
-            var areaWidth = attachedPoints[j].getGeometry().width;
-            var areaHeight = attachedPoints[j].getGeometry().height;
-            //Informazioni sull'area per l'unmerge
-            var areaAttackNode = this.xmlDoc.createElement('areaattack');
-            areaAttackNode.setAttribute('stencil', stencil);
-            areaAttackNode.setAttribute('x', 'P'+relX);
-            areaAttackNode.setAttribute('y', 'P'+relY);
-            areaAttackNode.setAttribute('w', areaWidth);
-            areaAttackNode.setAttribute('h', areaHeight);
-            areaAttackNode.setAttribute('area', 1);
-            constraintNode.appendChild(areaAttackNode);
-            var row;
-            var col;
-            for(row=0;row<=areaWidth;row=row+5) {
-              for(col=0;col<=areaHeight;col=col+5) {
-                if(ctx.isPointInPath(row,col,'evenodd') || ctx.isPointInStroke(row,col)) {
-                  var cn = this.xmlDoc.createElement('constraint');
-                  /*var xc, yc;
-                  if(shape.edge) {
-                    xc = row;
-                    yc = col;
-                  } else {
-                    xc = (attachedPoints[j].getGeometry().x + row);
-                    yc = (attachedPoints[j].getGeometry().y + col);
-                  }*/
-                  cn.setAttribute('x', (relX+row)/groupProp.w);
-                  cn.setAttribute('y', (relY+col)/groupProp.h);
-                  cn.setAttribute('name','A'+attachedPoints[j].id+'_'+attachedPoints[j].getAttribute('label',''));
-                  cn.setAttribute('perimeter',0);
-                  constraintNode.appendChild(cn);
-                }
-              }
-            }
-
-          } else if(attachedPoints[j].isOutlineConstraint()) {
-            attachedPoints[j].getGeometry().x += shape.getGeometry().x;
-            attachedPoints[j].getGeometry().y += shape.getGeometry().y;
-            constraintNode = this.createStencilOutlineConstraintNode(attachedPoints[j], groupProp);
-          }
+    if(!shape.isConstraint()) {
+      if(this.graph.getCellStyle(shape)[mxConstants.STYLE_DASHED]) {
+        var dashedNode = this.xmlDoc.createElement('dashed');
+        dashedNode.setAttribute('dashed', '1');
+        fgNode.appendChild(dashedNode);
+        var dashedPattern = this.graph.getCellStyle(shape)['dashPattern'];
+        if(dashedPattern!=null) {
+          var dashPatternNode = this.xmlDoc.createElement('dashpattern');
+          dashPatternNode.setAttribute('pattern', dashedPattern);
+          fgNode.appendChild(dashPatternNode);
         }
-        constraintNodes.appendChild(constraintNode);
+      } else {
+        var dashedNode = this.xmlDoc.createElement('dashed');
+        dashedNode.setAttribute('dashed', '0');
+        fgNode.appendChild(dashedNode);
+      }
+      //Per lo spessore della linea
+      var strokeWidth = this.graph.getCellStyle(shape)[mxConstants.STYLE_STROKEWIDTH];
+      if(strokeWidth!=null) {
+        var strokeWidthNode = this.xmlDoc.createElement('strokewidth');
+        strokeWidthNode.setAttribute('width', strokeWidth);
+        fgNode.appendChild(strokeWidthNode);
+      } else {
+        var strokeWidthNode = this.xmlDoc.createElement('strokewidth');
+        strokeWidthNode.setAttribute('width', '1');
+        fgNode.appendChild(strokeWidthNode);
+      }
+      //Per il colore di contorno
+      var strokeColorNode = this.xmlDoc.createElement('strokecolor');
+      strokeColorNode.setAttribute('color',this.graph.getCellStyle(shape)[mxConstants.STYLE_STROKECOLOR]);
+      fgNode.appendChild(strokeColorNode);
+
+      //Per il colore di riempimento
+      var fillColor=this.graph.getCellStyle(shape)[mxConstants.STYLE_FILLCOLOR];
+
+      if(fillColor!=null && stroke==false) {
+        var fillColorNode = this.xmlDoc.createElement('fillcolor');
+        fillColorNode.setAttribute('color',fillColor);
+        fgNode.appendChild(fillColorNode);
+        fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
+      } else if(stroke==false){
+        fgNode.appendChild(this.xmlDoc.createElement('stroke'));
+      } else if(stroke) {
+        fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
       }
     }
+
   }
   return {connNode: constraintNodes, fgNodes: fgNode};
 }
@@ -604,16 +546,10 @@ ShapeCreator.prototype.createImageNode = function(shape, groupProp) {
 /**
  * Questo metodo restituisce un nodo XML rappresentante un punto di attacco
  */
-ShapeCreator.prototype.createPointConstraintNode = function(shape, point, groupProp) {
+ShapeCreator.prototype.createPointConstraintNode = function(point, groupProp) {
   var constraintNode = this.xmlDoc.createElement('constraint');
   var attachedPointGeo = point.getGeometry();
-  /*Se il simbolo è uno stencil il punto di attacco è posizionato rispetto al simbolo e non al foglio di lavoro
-    Pertanto va prima traslato
-  */
-  if(shape.shapeType == mxCell.STENCIL_SHAPE_TYPE) {
-    attachedPointGeo.x = attachedPointGeo.x + shape.getGeometry().x;
-    attachedPointGeo.y = attachedPointGeo.y + shape.getGeometry().y;
-  }
+
   var x = ((attachedPointGeo.x+attachedPointGeo.width/2)-groupProp.x)/groupProp.w;
   var y = ((attachedPointGeo.y+attachedPointGeo.height/2)-groupProp.y)/groupProp.h;
 
@@ -625,7 +561,7 @@ ShapeCreator.prototype.createPointConstraintNode = function(shape, point, groupP
   return constraintNode;
 }
 
-ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupProp) {
+ShapeCreator.prototype.createLineConstraintNode = function(line, groupProp) {
   var points = line.getAllPoints();
   var lineAttackNode = this.xmlDoc.createDocumentFragment();
   var constraintNodes = this.xmlDoc.createDocumentFragment();
@@ -633,22 +569,11 @@ ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupPro
   var linePoints = [];
   var i;
   for(i=0; i<points.length-1; i++) {
-    var x1 = points[i].x;
-    var y1 = points[i].y;
-    var x2 = points[i+1].x;
-    var y2 = points[i+1].y;
-    //Devo traslare se il parent è uno stencil
-    if(shape.shapeType == mxCell.STENCIL_SHAPE_TYPE) {
-      x1 = x1 + shape.getGeometry().x;
-      y1 = y1 + shape.getGeometry().y;
-      x2 = x2 + shape.getGeometry().x;
-      y2 = y2 + shape.getGeometry().y;
-    }
     //Setto la posizione relativa allo stencil da creare
-    var x1 = (x1-groupProp.x);
-    var y1 = (y1-groupProp.y);
-    var x2 = (x2-groupProp.x);
-    var y2 = (y2-groupProp.y);
+    var x1 = (points[i].x-groupProp.x);
+    var y1 = (points[i].y-groupProp.y);
+    var x2 = (points[i+1].x-groupProp.x);
+    var y2 = (points[i+1].y-groupProp.y);
 
     linePoints.push({x: x1, y: y1});
     linePoints.push({x: x2, y: y2});
@@ -704,26 +629,24 @@ ShapeCreator.prototype.createLineConstraintNode = function(shape, line, groupPro
   return lineAttackNode;
 }
 
-ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupProp) {
+
+ShapeCreator.prototype.createCurveConstraintNode = function(curve, groupProp) {
   var points = curve.getAllPoints();
   var curveLineNode = this.xmlDoc.createDocumentFragment();
   var constraintNodes = this.xmlDoc.createDocumentFragment();
 
   var relativeP = [];
   var i;
+
   for(i=0; i<points.length; i++) {
     var p = {x:0,y:0};
-    if(shape.shapeType == mxCell.STENCIL_SHAPE_TYPE) {
-      p.x = points[i].x + shape.getGeometry().x;
-      p.y = points[i].y + shape.getGeometry().y;
-    }
-    p.x = (p.x-groupProp.x);
-    p.y = (p.y-groupProp.y);
+    p.x = (points[i].x-groupProp.x);
+    p.y = (points[i].y-groupProp.y);
     relativeP.push(p);
   }
 
   if(points.length==2) {
-    return createLineConstraintNode(shape, curve, groupProp);
+    return createLineConstraintNode(curve, groupProp);
   } else if(points.length==3) {
     var i;
     for(i=0; i<1; i=i+0.02) {
@@ -777,6 +700,50 @@ ShapeCreator.prototype.createCurveConstraintNode = function(shape, curve, groupP
   return curveLineNode;
 }
 
+ShapeCreator.prototype.createAreaConstraintNode = function(area, groupProp) {
+  var stencil = this.graph.getCellStyle(area)[mxConstants.STYLE_SHAPE];
+  //Creo un canvas
+  var ctx = this.createCanvas(area);
+  var relX = area.getGeometry().x - groupProp.x;
+  var relY = area.getGeometry().y - groupProp.y;
+
+  //Per ogni punto controllo se tale punto è nel path
+  var constraintNode = this.xmlDoc.createDocumentFragment();
+  var areaWidth = area.getGeometry().width;
+  var areaHeight = area.getGeometry().height;
+  //Informazioni sull'area per l'unmerge
+  var areaAttackNode = this.xmlDoc.createElement('areaattack');
+  areaAttackNode.setAttribute('stencil', stencil);
+  areaAttackNode.setAttribute('x', 'P'+relX);
+  areaAttackNode.setAttribute('y', 'P'+relY);
+  areaAttackNode.setAttribute('w', areaWidth);
+  areaAttackNode.setAttribute('h', areaHeight);
+  areaAttackNode.setAttribute('area', 1);
+  constraintNode.appendChild(areaAttackNode);
+  var row;
+  var col;
+  for(row=0;row<=areaWidth;row=row+5) {
+    for(col=0;col<=areaHeight;col=col+5) {
+      if(ctx.isPointInPath(row,col,'evenodd') || ctx.isPointInStroke(row,col)) {
+        var cn = this.xmlDoc.createElement('constraint');
+        /*var xc, yc;
+        if(shape.edge) {
+          xc = row;
+          yc = col;
+        } else {
+          xc = (attachedPoints[j].getGeometry().x + row);
+          yc = (attachedPoints[j].getGeometry().y + col);
+        }*/
+        cn.setAttribute('x', (relX+row)/groupProp.w);
+        cn.setAttribute('y', (relY+col)/groupProp.h);
+        cn.setAttribute('name','A'+area.id+'_'+area.getAttribute('label',''));
+        cn.setAttribute('perimeter',0);
+        constraintNode.appendChild(cn);
+      }
+    }
+  }
+  return constraintNode;
+}
 /**
  *  Questa funzione restituisce un frammento XML contenente i punti di attacco sul contorno di uno stencil
  *  @param shape stencil di cui si vogliono rappresentare in XML i punto di attacco del contorno

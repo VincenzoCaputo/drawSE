@@ -32,10 +32,8 @@ mxCell.prototype.setConstraint = function() {
     var node = this.createAttackSymbolXmlNode();
     node.setAttribute('isConstraint', 1);
     this.setValue(node);
-    console.log(node);
   } else {
     this.setAttribute('isConstraint',1);
-    console.log(this.value);
   }
 
 }
@@ -204,6 +202,8 @@ mxCell.prototype.getShapeType = function() {
     return this.STENCIL_SHAPE_TYPE;
   } else if(this.getStyle().includes('text')) {
     return this.TEXT_SHAPE_TYPE;
+  } else if(this.getStyle().includes('ellipse')) {
+    return this.POINT_SHAPE_TYPE;
   }
   return this.LINE_SHAPE_TYPE;
 }
@@ -214,3 +214,4 @@ mxCell.prototype.LINE_SHAPE_TYPE = 'line';
 mxCell.prototype.TEXT_SHAPE_TYPE = 'text';
 mxCell.prototype.GROUP_SHAPE_TYPE = 'group';
 mxCell.prototype.IMAGE_SHAPE_TYPE = 'image';
+mxCell.prototype.POINT_SHAPE_TYPE = 'point';

@@ -266,19 +266,8 @@ Actions.prototype.init = function()
 			for(i=0; i<cellsToMerge.length; i++) {
 				if(graph.getCellStyle(cellsToMerge[i])[mxConstants.STYLE_SHAPE].includes('stencil(')) {
 					var cells = shapeCreator.unmergeShape(cellsToMerge[i]);
-					//Effettuo l'attach dei punti di attacco ai simboli
-					var constraintCells = graph.getModel().filterCells(cells, function(cell) {
-						if(cell.isConstraint()) {
-							return true;
-						}
-					});
-					var symbolCells = graph.getModel().filterCells(cells, function(cell) {
-						if((cell.vertex || cell.edge) && !cell.isConstraint() && !cell.style.includes('text')) {
-							return true;
-						}
-					});
-					graph.autoAttachConstraints(constraintCells, symbolCells);
-					cellsToTransform = cellsToTransform.concat(symbolCells);
+
+					cellsToTransform = cellsToTransform.concat(cells);
 				} else {
 					cellsToTransform.push(cellsToMerge[i]);
 				}
