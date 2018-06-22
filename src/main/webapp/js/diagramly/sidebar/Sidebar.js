@@ -41,6 +41,11 @@
 	/**
 	 *
 	 */
+	Sidebar.prototype.allied_telesis = ['Buildings', 'Computer and Terminals', 'Media Converters', 'Security', 'Storage', 'Switch', 'Wireless'];
+
+	/**
+	 *
+	 */
 	Sidebar.prototype.gcp = ['Cards', 'Big Data', 'Compute', 'Developer Tools', 'Extras', 'Identity and Security', 'Machine Learning', 'Management Tools', 'Networking', 'Storage Databases'];
 	/**
 	 *
@@ -129,6 +134,7 @@
 	                                   {id: 'bpmn', prefix: 'bpmn', libs: [''/*prefix is library*/, 'Gateways', 'Events']},
 	                                   {id: 'clipart', prefix: null, libs: ['computer', 'finance', 'clipart', 'networking', 'people', 'telco']},
 	                                   {id: 'ibm', prefix: 'ibm', libs: Sidebar.prototype.ibm},
+	                                   {id: 'allied_telesis', prefix: 'allied_telesis', libs: Sidebar.prototype.allied_telesis},
 	                                   {id: 'eip', prefix: 'eip', libs: Sidebar.prototype.eip},
 	                                   {id: 'mockups', prefix: 'mockup', libs: ['Buttons', 'Containers', 'Forms', 'Graphics', 'Markup', 'Misc', 'Navigation', 'Text']},
 	                                   {id: 'pid2', prefix: 'pid2', libs: ['Agitators', 'Apparatus Elements', 'Centrifuges', 'Compressors', 'Compressors ISO', 'Crushers Grinding',
@@ -353,6 +359,7 @@
             			{title: mxResources.get('networking'),
             			entries: [{title: mxResources.get('aws'), id: 'aws3', image: IMAGE_PATH + '/sidebar-aws3.png'},
             			// TODO: Add isometric containers
+            					  {title: 'Allied Telesis', id: 'allied_telesis', image: IMAGE_PATH + '/sidebar-allied_telesis.png'},
             			          {title: mxResources.get('aws3d'), id: 'aws3d', image: IMAGE_PATH + '/sidebar-aws3d.png'},
             			          {title: mxResources.get('azure'), id: 'azure', image: IMAGE_PATH + '/sidebar-azure.png'},
             			          {title: 'Cloud & Enterprise', id: 'mscae', image: IMAGE_PATH + '/sidebar-mscae.png'},
@@ -437,17 +444,27 @@
 					clone.style.borderColor = 'transparent';
 					clone.style.width = '456px';
 
-					var html = '<!DOCTYPE html><html><head><link rel="stylesheet" type="text/css" href="https://www.draw.io/styles/grapheditor.css">' +
-						'</head><body style="background:#ffffff;font-family:Helvetica,Arial;">' +
-						title2.outerHTML + clone.outerHTML + '</body></html>';
+					var parser = new DOMParser();
+					var doc = parser.parseFromString('<body style="background:#ffffff;font-family:Helvetica,Arial;">' +
+							title2.outerHTML + clone.outerHTML + '</body>', 'text/html');
 
-					clone.style.position = 'absolute';
-					window.document.body.appendChild(clone);
-					var h = clone.clientHeight + 18;
-					clone.parentNode.removeChild(clone);
+					this.editorUi.convertImages(doc.documentElement, mxUtils.bind(this, function(body)
+					{
+						var html = '<!DOCTYPE html><html><head><link rel="stylesheet" type="text/css" ' +
+							'href="https://www.draw.io/styles/grapheditor.css"></head>' +
+							mxUtils.getXml(body) + '</html>';
 
-		    		new mxXmlRequest(EXPORT_URL, 'w=456&h=' + h + '&html=' + encodeURIComponent(
-		    			this.editorUi.editor.graph.compress(html))).simulate(document, '_blank');
+						clone.style.position = 'absolute';
+						window.document.body.appendChild(clone);
+						var h = clone.clientHeight + 18;
+						clone.parentNode.removeChild(clone);
+
+						this.editorUi.confirm('Image data created', mxUtils.bind(this, function()
+						{
+				    		new mxXmlRequest(EXPORT_URL, 'w=456&h=' + h + '&html=' + encodeURIComponent(
+					    			this.editorUi.editor.graph.compress(html))).simulate(document, '_blank');
+						}), null, mxResources.get('save'), mxResources.get('cancel'));
+					}));
 
 					return;
 				}
@@ -819,58 +836,66 @@
 				{
 					var pg = page - Math.ceil((len - count / 4) / count);
 
-					mxUtils.get(ICONSEARCH_PATH + '?v=2&q=' + encodeURIComponent(searchTerms) +
+					mxUtils.get(ICONSEARCH_PATH + '?q=' + encodeURIComponent(searchTerms) +
 						'&p=' + pg + '&c=' + count, mxUtils.bind(this, function(req)
 					{
 						try
 						{
 							if (req.getStatus() >= 200 && req.getStatus() <= 299)
 							{
-								try
+								// Ignore without error if no response
+								if (req.getText() != null && req.getText().length > 0)
 								{
-									var res = JSON.parse(req.getText());
+									try
+									{
+										var res = JSON.parse(req.getText());
 
-									if (res == null || res.icons == null)
+										if (res == null || res.icons == null)
+										{
+											succ(results, len, false, terms);
+											this.editorUi.handleError(res);
+										}
+										else
+										{
+											for (var i = 0; i < res.icons.length; i++)
+											{
+												var sizes = res.icons[i].raster_sizes;
+												var index = sizes.length - 1;
+
+												while (index > 0 && sizes[index].size > 128)
+												{
+													index--;
+												}
+
+												var size = sizes[index].size;
+												var url = sizes[index].formats[0].preview_url;
+
+												if (size != null && url != null)
+												{
+													(mxUtils.bind(this, function(s, u)
+													{
+														results.push(mxUtils.bind(this, function()
+														{
+															return this.createVertexTemplate('shape=image;html=1;verticalAlign=top;' +
+																'verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;' +
+																'aspect=fixed;image=' + u, s, s, '');
+														}));
+													}))(size, url);
+												}
+											}
+
+											succ(results, (page - 1) * count + results.length, res.icons.length == count, terms);
+										}
+									}
+									catch (e)
 									{
 										succ(results, len, false, terms);
-										this.editorUi.handleError(res);
-									}
-									else
-									{
-										for (var i = 0; i < res.icons.length; i++)
-										{
-											var sizes = res.icons[i].raster_sizes;
-											var index = sizes.length - 1;
-
-											while (index > 0 && sizes[index].size > 128)
-											{
-												index--;
-											}
-
-											var size = sizes[index].size;
-											var url = sizes[index].formats[0].preview_url;
-
-											if (size != null && url != null)
-											{
-												(mxUtils.bind(this, function(s, u)
-												{
-													results.push(mxUtils.bind(this, function()
-													{
-														return this.createVertexTemplate('shape=image;html=1;verticalAlign=top;' +
-															'verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;' +
-															'aspect=fixed;image=' + u, s, s, '');
-													}));
-												}))(size, url);
-											}
-										}
-
-										succ(results, (page - 1) * count + results.length, res.icons.length == count, terms);
+										this.editorUi.handleError(e);
 									}
 								}
-								catch (e)
+								else
 								{
 									succ(results, len, false, terms);
-									this.editorUi.handleError(e);
 								}
 							}
 							else

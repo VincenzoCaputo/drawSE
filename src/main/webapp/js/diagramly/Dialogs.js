@@ -2520,7 +2520,7 @@ var ParseDialog = function(editorUi, title, defaultType)
 					editorUi.editor.graph.getModel().endUpdate();
 				}
 
-				editorUi.editor.graph.setSelectionCells(inserted[0]);
+				editorUi.editor.graph.setSelectionCells(inserted);
 				editorUi.editor.graph.scrollCellToVisible(editorUi.editor.graph.getSelectionCell());
 				graph.destroy();
 				container.parentNode.removeChild(container);
@@ -2539,10 +2539,19 @@ var ParseDialog = function(editorUi, title, defaultType)
 
 	var typeSelect = document.createElement('select');
 
+	if (defaultType == 'formatSql')
+	{
+		typeSelect.style.display = 'none';
+	}
+
 	var listOption = document.createElement('option');
 	listOption.setAttribute('value', 'list');
 	mxUtils.write(listOption, mxResources.get('list'));
-	typeSelect.appendChild(listOption);
+
+	if (defaultType != 'plantUml')
+	{
+		typeSelect.appendChild(listOption);
+	}
 
 	if (defaultType == null || defaultType == 'fromText')
 	{
@@ -2552,17 +2561,21 @@ var ParseDialog = function(editorUi, title, defaultType)
 	var tableOption = document.createElement('option');
 	tableOption.setAttribute('value', 'table');
 	mxUtils.write(tableOption, mxResources.get('formatSql'));
-	typeSelect.appendChild(tableOption);
 
 	if (defaultType == 'formatSql')
 	{
+		typeSelect.appendChild(tableOption);
 		tableOption.setAttribute('selected', 'selected');
 	}
 
 	var diagramOption = document.createElement('option');
 	diagramOption.setAttribute('value', 'diagram');
 	mxUtils.write(diagramOption, mxResources.get('diagram'));
-	typeSelect.appendChild(diagramOption);
+
+	if (defaultType != 'plantUml')
+	{
+		typeSelect.appendChild(diagramOption);
+	}
 
 	var plantUmlSvgOption = document.createElement('option');
 	plantUmlSvgOption.setAttribute('value', 'plantUmlSvg');
@@ -2582,7 +2595,8 @@ var ParseDialog = function(editorUi, title, defaultType)
 	mxUtils.write(plantUmlTxtOption, mxResources.get('plantUml') + ' (' + mxResources.get('text') + ')');
 
 	// Disabled for invalid hosts via CORS headers
-	if (EditorUi.enablePlantUml && Graph.fileSupport && !editorUi.isOffline())
+	if (EditorUi.enablePlantUml && Graph.fileSupport &&
+		!editorUi.isOffline() && defaultType == 'plantUml')
 	{
 		typeSelect.appendChild(plantUmlSvgOption);
 		typeSelect.appendChild(plantUmlPngOption);
@@ -4396,7 +4410,7 @@ var LinkDialog = function(editorUi, initialValue, btnLabel, fn, showPages)
 	linkInput.setAttribute('placeholder', mxResources.get('dragUrlsHere'));
 	linkInput.setAttribute('type', 'text');
 	linkInput.style.marginTop = '6px';
-	linkInput.style.width = '400px';
+	linkInput.style.width = '440px';
 	linkInput.style.backgroundImage = 'url(\'' + Dialog.prototype.clearImage + '\')';
 	linkInput.style.backgroundRepeat = 'no-repeat';
 	linkInput.style.backgroundPosition = '100% 50%';
@@ -4436,11 +4450,11 @@ var LinkDialog = function(editorUi, initialValue, btnLabel, fn, showPages)
 	pageRadio.setAttribute('name', 'current-linkdialog');
 
 	var pageSelect = document.createElement('select');
-	pageSelect.style.width = '380px';
+	pageSelect.style.width = '420px';
 
 	if (showPages && editorUi.pages != null)
 	{
-		if (initialValue != null && editorUi.editor.graph.isPageLink(initialValue))
+		if (initialValue != null && initialValue.substring(0, 13) == 'data:page/id,')
 		{
 			pageRadio.setAttribute('checked', 'checked');
 			pageRadio.defaultChecked = true;
@@ -4452,7 +4466,7 @@ var LinkDialog = function(editorUi, initialValue, btnLabel, fn, showPages)
 			urlRadio.defaultChecked = true;
 		}
 
-		linkInput.style.width = '380px';
+		linkInput.style.width = '420px';
 		inner.appendChild(urlRadio);
 		inner.appendChild(linkInput);
 		inner.appendChild(cross);
@@ -4619,6 +4633,20 @@ var LinkDialog = function(editorUi, initialValue, btnLabel, fn, showPages)
 	if (editorUi.editor.cancelFirst)
 	{
 		btns.appendChild(cancelBtn);
+	}
+
+	var helpBtn = mxUtils.button(mxResources.get('help'), function()
+	{
+		editorUi.openLink('https://desk.draw.io/solution/articles/16000080137');
+	});
+	helpBtn.style.verticalAlign = 'middle';
+	helpBtn.className = 'geBtn';
+
+	btns.appendChild(helpBtn);
+
+	if (editorUi.isOffline() && !mxClient.IS_CHROMEAPP)
+	{
+		helpBtn.style.display = 'none';
 	}
 
 	LinkDialog.selectedDocs = null;
@@ -6257,58 +6285,12 @@ var TagsWindow = function(editorUi, x, y, w, h)
 
 	function searchCells(cells)
 	{
-		cells = (cells != null) ? cells : graph.model.getDescendants(graph.model.getRoot());
-		var tagList = searchInput.value.split(' ');
-		var result = [];
-
-		for (var i = 0; i < cells.length; i++)
-		{
-			if (graph.model.isVertex(cells[i]) || graph.model.isEdge(cells[i]))
-			{
-				var tags = (cells[i].value != null && typeof(cells[i].value) == 'object') ?
-					mxUtils.trim(cells[i].value.getAttribute(propertyName) || '') : '';
-				var match = true;
-
-				if (tags.length > 0)
-				{
-					var tmp = tags.toLowerCase().split(' ');
-
-					for (var j = 0; j < tagList.length && match; j++)
-					{
-						var tag = mxUtils.trim(tagList[j]).toLowerCase();
-
-						match = match && (tag.length == 0 || mxUtils.indexOf(tmp, tag) >= 0);
-					}
-				}
-				else
-				{
-					match = mxUtils.trim(searchInput.value).length == 0;
-				}
-
-				if (match)
-				{
-					result.push(cells[i]);
-				}
-			}
-		}
-
-		return result;
+		return graph.getCellsForTags(searchInput.value.split(' '), cells, propertyName);
 	};
 
 	function setCellsVisible(cells, visible)
 	{
-		graph.model.beginUpdate();
-		try
-		{
-			for (var i = 0; i < cells.length; i++)
-			{
-				graph.model.setVisible(cells[i], visible);
-			}
-		}
-		finally
-		{
-			graph.model.endUpdate();
-		}
+		graph.setCellsVisible(cells, visible);
 	};
 
 	mxUtils.br(div);

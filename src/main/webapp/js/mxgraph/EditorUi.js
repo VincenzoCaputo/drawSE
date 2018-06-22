@@ -1355,6 +1355,11 @@ EditorUi.prototype.initClipboard = function()
 /**
  * Initializes the infinite canvas.
  */
+EditorUi.prototype.lazyZoomDelay = 20;
+
+/**
+ * Initializes the infinite canvas.
+ */
 EditorUi.prototype.initCanvas = function()
 {
 	// Initial page layout view, scrollBuffer and timer-based scrolling
@@ -2035,7 +2040,7 @@ EditorUi.prototype.initCanvas = function()
 
             this.cumulativeZoomFactor = 1;
             this.updateZoomTimeout = null;
-        }), 20);
+        }), this.lazyZoomDelay);
 	};
 
 	mxEvent.addMouseWheelListener(mxUtils.bind(this, function(evt, up)
@@ -2481,8 +2486,9 @@ EditorUi.prototype.resetScrollbars = function()
 			if (graph.pageVisible)
 			{
 				var pad = graph.getPagePadding();
-				graph.container.scrollTop = Math.floor(pad.y - this.editor.initialTopSpacing);
-				graph.container.scrollLeft = Math.floor(Math.min(pad.x, (graph.container.scrollWidth - graph.container.clientWidth) / 2));
+				graph.container.scrollTop = Math.floor(pad.y - this.editor.initialTopSpacing) - 1;
+				graph.container.scrollLeft = Math.floor(Math.min(pad.x,
+					(graph.container.scrollWidth - graph.container.clientWidth) / 2)) - 1;
 
 				// Scrolls graph to visible area
 				var bounds = graph.getGraphBounds();
@@ -2804,7 +2810,7 @@ EditorUi.prototype.updateActionStates = function()
 	// Updates action states
 	var actions = ['cut', 'copy', 'bold', 'italic', 'underline', 'delete', 'duplicate',
 	               'editStyle', 'editTooltip', 'editLink', 'backgroundColor', 'borderColor',
-	               'edit', 'toFront', 'toBack', 'lockUnlock', 'solid', 'dashed',
+	               'edit', 'toFront', 'toBack', 'lockUnlock', 'solid', 'dashed', 'pasteSize',
 	               'dotted', 'fillColor', 'gradientColor', 'shadow', 'fontColor',
 	               'formattedText', 'rounded', 'toggleRounded', 'sharp', 'strokeColor'];
 
@@ -2815,6 +2821,7 @@ EditorUi.prototype.updateActionStates = function()
 
 	this.actions.get('setAsDefaultStyle').setEnabled(graph.getSelectionCount() == 1);
 	this.actions.get('clearWaypoints').setEnabled(!graph.isSelectionEmpty());
+	this.actions.get('copySize').setEnabled(graph.getSelectionCount() == 1);
 	this.actions.get('turn').setEnabled(!graph.isSelectionEmpty());
 	this.actions.get('curved').setEnabled(edgeSelected);
 	this.actions.get('rotation').setEnabled(vertexSelected);
@@ -3638,6 +3645,19 @@ EditorUi.prototype.showLinkDialog = function(value, btnLabel, fn)
 /**
  * Hides the current menu.
  */
+EditorUi.prototype.showDataDialog = function(cell)
+{
+	if (cell != null)
+	{
+		var dlg = new EditDataDialog(this, cell);
+		this.showDialog(dlg.container, 340, 340, true, false, null, false);
+		dlg.init();
+	}
+};
+
+/**
+ * Hides the current menu.
+ */
 EditorUi.prototype.showBackgroundImageDialog = function(apply)
 {
 	apply = (apply != null) ? apply : mxUtils.bind(this, function(image)
@@ -3904,7 +3924,9 @@ EditorUi.prototype.createKeyHandler = function(editor)
 						  65: this.actions.get('connectionArrows'), // Alt+Shift+A
 						  76: this.actions.get('editLink'), // Alt+Shift+L
 						  80: this.actions.get('connectionPoints'), // Alt+Shift+P
-						  84: this.actions.get('editTooltip') // Alt+Shift+T
+						  84: this.actions.get('editTooltip'), // Alt+Shift+T
+						  86: this.actions.get('pasteSize'), // Alt+Shift+V
+						  88: this.actions.get('copySize') // Alt+Shift+X
 	};
 
 	mxKeyHandler.prototype.getFunction = function(evt)

@@ -1628,11 +1628,53 @@ ArrangePanel.prototype.addGroupOps = function(div)
 			ui.actions.get('ungroup').funct();
 		})
 
-		btn.setAttribute('title', mxResources.get('ungroup') + ' (' + this.editorUi.actions.get('ungroup').shortcut + ')');
+		btn.setAttribute('title', mxResources.get('ungroup') + ' (' +
+			this.editorUi.actions.get('ungroup').shortcut + ')');
 		btn.style.width = '202px';
 		btn.style.marginBottom = '2px';
 		div.appendChild(btn);
 		count++;
+	}
+
+	if (ss.vertices.length > 0)
+	{
+		if (count > 0)
+		{
+			mxUtils.br(div);
+			count = 0;
+		}
+
+		var btn = mxUtils.button(mxResources.get('copySize'), function(evt)
+		{
+			ui.actions.get('copySize').funct();
+		});
+
+		btn.setAttribute('title', mxResources.get('copySize') + ' (' +
+			this.editorUi.actions.get('copySize').shortcut + ')');
+		btn.style.width = '202px';
+		btn.style.marginBottom = '2px';
+
+		div.appendChild(btn);
+		count++;
+
+		if (ui.copiedSize != null)
+		{
+			var btn2 = mxUtils.button(mxResources.get('pasteSize'), function(evt)
+			{
+				ui.actions.get('pasteSize').funct();
+			});
+
+			btn2.setAttribute('title', mxResources.get('pasteSize') + ' (' +
+				this.editorUi.actions.get('pasteSize').shortcut + ')');
+
+			div.appendChild(btn2);
+			count++;
+
+			btn.style.width = '100px';
+			btn.style.marginBottom = '2px';
+			btn2.style.width = '100px';
+			btn2.style.marginBottom = '2px';
+		}
 	}
 
 	if (graph.getSelectionCount() == 1 && graph.getModel().isVertex(cell) &&
@@ -4075,6 +4117,136 @@ StyleFormatPanel.prototype.init = function()
 			}
 
 			this.container.appendChild(this.addStyleOps(opsPanel));
+	}
+};
+
+/**
+ * Use browser for parsing CSS.
+ */
+StyleFormatPanel.prototype.getCssRules = function(css)
+{
+	var doc = document.implementation.createHTMLDocument('');
+	var styleElement = document.createElement('style');
+
+	mxUtils.setTextContent(styleElement, css);
+	doc.body.appendChild(styleElement);
+
+	return styleElement.sheet.cssRules;
+};
+
+/**
+ * Adds the label menu items to the given menu and parent.
+ */
+StyleFormatPanel.prototype.addSvgStyles = function(container)
+{
+	var ui = this.editorUi;
+	var graph = ui.editor.graph;
+	var ss = this.format.getSelectionState();
+	container.style.paddingTop = '6px';
+	container.style.paddingBottom = '6px';
+	container.style.fontWeight = 'bold';
+	container.style.display = 'none';
+
+	try
+	{
+		var exp = ss.style.editableCssRules;
+
+		if (exp != null)
+		{
+			var regex = new RegExp(exp);
+
+			var data = ss.style.image.substring(ss.style.image.indexOf(',') + 1);
+			var xml = (window.atob) ? atob(data) : Base64.decode(data, true);
+			var svg = mxUtils.parseXml(xml);
+
+			if (svg != null)
+			{
+				var styles = svg.getElementsByTagName('style');
+
+				for (var i = 0; i < styles.length; i++)
+				{
+					var rules = this.getCssRules(mxUtils.getTextContent(styles[i]));
+
+					for (var j = 0; j < rules.length; j++)
+					{
+						this.addSvgRule(container, rules[j], svg, styles[i], rules, j, regex);
+					}
+				}
+			}
+		}
+	}
+	catch (e)
+	{
+		// ignore
+	}
+
+	return container;
+};
+
+/**
+ * Adds the label menu items to the given menu and parent.
+ */
+StyleFormatPanel.prototype.addSvgRule = function(container, rule, svg, styleElem, rules, ruleIndex, regex)
+{
+	var ui = this.editorUi;
+	var graph = ui.editor.graph;
+
+	if (regex.test(rule.selectorText))
+	{
+		function rgb2hex(rgb)
+		{
+			 rgb = rgb.match(/^rgba?[\s+]?\([\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?/i);
+
+			 return (rgb && rgb.length === 4) ? "#" +
+			  ("0" + parseInt(rgb[1],10).toString(16)).slice(-2) +
+			  ("0" + parseInt(rgb[2],10).toString(16)).slice(-2) +
+			  ("0" + parseInt(rgb[3],10).toString(16)).slice(-2) : '';
+		};
+
+		var addStyleRule = mxUtils.bind(this, function(rule, key, label)
+		{
+			if (rule.style[key] != '')
+			{
+				var option = this.createColorOption(label + ' ' + rule.selectorText, function()
+				{
+					return rgb2hex(rule.style[key]);
+				}, function(color)
+				{
+					rules[ruleIndex].style[key] = color;
+					var cssTxt = '';
+
+					for (var i = 0; i < rules.length; i++)
+					{
+						cssTxt += rules[i].cssText + ' ';
+					}
+
+					styleElem.textContent = cssTxt;
+					var xml = mxUtils.getXml(svg.documentElement);
+
+					graph.setCellStyles(mxConstants.STYLE_IMAGE, 'data:image/svg+xml,' +
+						((window.btoa) ? btoa(xml) : Base64.encode(xml, true)),
+						graph.getSelectionCells());
+				}, '#ffffff',
+				{
+					install: function(apply)
+					{
+						// ignore
+					},
+					destroy: function()
+					{
+						// ignore
+					}
+				});
+
+				container.appendChild(option);
+
+				// Shows container if rules are added
+				container.style.display = '';
+			}
+		});
+
+		addStyleRule(rule, 'fill', mxResources.get('fill'));
+		addStyleRule(rule, 'stroke', mxResources.get('line'));
 	}
 };
 

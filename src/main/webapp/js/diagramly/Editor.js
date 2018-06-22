@@ -58,6 +58,11 @@
 	 * Default value for custom libraries in mxSettings.
 	 */
 	Editor.defaultCustomLibraries = [];
+	
+	/**
+	 * Default value for custom libraries in mxSettings.
+	 */
+	Editor.enableCustomLibraries = true;
 
 	/**
 	 * Default value for the CSV import dialog.
@@ -200,6 +205,12 @@
 				Editor.defaultCustomLibraries = config.defaultCustomLibraries;
 			}
 			
+			// Disables custom libraries
+			if (config.enableCustomLibraries != null)
+			{
+				Editor.enableCustomLibraries = config.enableCustomLibraries;
+			}
+			
 			// Overrides default vertex style
 			if (config.defaultVertexStyle != null)
 			{
@@ -260,6 +271,25 @@
 				}
 			}
 		}
+	};
+	
+	/**
+	 * Generates a unique ID of the given length
+	 */
+	Editor.s4 = function()
+	{
+	    return Math.floor((1 + Math.random()) * 0x10000)
+	    	.toString(16)
+	    	.substring(1);
+	};
+
+	/**
+	 * Generates a unique ID of the given length
+	 */
+	Editor.guid = function()
+	{
+	  return Editor.s4() + Editor.s4() + '-' + Editor.s4() + '-' + Editor.s4() + '-' +
+	  	Editor.s4() + '-' + Editor.s4() + Editor.s4() + Editor.s4();
 	};
 
 	/**
@@ -565,7 +595,7 @@
 	 */
 	Editor.initMath = function(src, config)
 	{
-		src = (src != null) ? src : 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_HTMLorMML';
+		src = (src != null) ? src : 'https://math.draw.io/current/MathJax.js?config=TeX-MML-AM_HTMLorMML';
 		Editor.mathJaxQueue = [];
 		
 		Editor.doMathJaxRender = function(container)
@@ -593,6 +623,9 @@
 				MathJax.Hub.Config(config || {
 					jax: ['input/TeX', 'input/MathML', 'input/AsciiMath', 'output/HTML-CSS'],
 					extensions: ['tex2jax.js', 'mml2jax.js', 'asciimath2jax.js'],
+					'HTML-CSS': {
+						imageFont: null
+					},
 					TeX: {
 					  extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js', 'noUndefined.js']
 					},
@@ -708,6 +741,26 @@
 			
 			mxSettings.setRecentColors(ColorDialog.recentColors);
 			mxSettings.save();
+		};
+	}
+	
+	// Overrides ID for pages
+	if (window.EditDataDialog)
+	{
+		EditDataDialog.getDisplayIdForCell = function(ui, cell)
+		{
+			var id = null;
+			
+			if (ui.editor.graph.getModel().getParent(cell) != null)
+			{
+				id = cell.getId();
+			}
+			else if (ui.currentPage != null)
+			{
+				id = ui.currentPage.getId();
+			}
+			
+			return id;
 		};
 	}
 
@@ -1359,17 +1412,261 @@
 	};
 
 	/**
-	 * Adds support for page links.
+	 * Adds support for data:action/json,{"actions":[actions]} where actions is
+	 * a comma-separated list of JSON objects with the following possible keys:
+	 * 
+	 * "open": string - opens a standard or custom link (including page links)
+	 * "toggle"/"show"/"hide"/"highlight": cellset - toggles, shows, hides or
+	 * highlights the given cells
+	 * "select": cellset - selects the given cells if the graph is editable
+	 * "scroll": cellset - scrolls to the first cell in the given celllset
+	 * If no scroll action is specified, then the first cell of the select
+	 * or highlight action is scrolled to visible (select has precedence).
+	 * A cellset is an array of cell IDs or tags or both, eg.
+	 * {"cells": ["id1", "id2"], "tags": ["tag1", "tag2"]}
+	 * To specify all cells, use "cells": ["*"], to specify all cells with
+	 * a tag, use "tags": [] (empty array).
+	 * 
+	 * An example action is:
+	 * 
+	 * data:action/json,{"actions":[{"toggle": {"cells": ["3", "4"]}}]}
+	 * 
+	 * This toggles the visible state of the cells with ID 3 and 4.
 	 */
-	Graph.prototype.isPageLink = function(href)
+	Graph.prototype.handleCustomLink = function(href)
 	{
-		return href != null && href.substring(0, 10) == 'data:page/';
+		if (href.substring(0, 17) == 'data:action/json,')
+		{
+			// Some actions are stateless and must be handled before of the transaction
+			var action = JSON.parse(href.substring(17));
+
+			if (action.actions != null)
+			{
+				// Executes open actions before starting transaction
+				for (var i = 0; i < action.actions.length; i++)
+				{
+					if (action.actions[i].open != null)
+					{
+						if (this.isCustomLink(action.actions[i].open))
+						{
+							this.customLinkClicked(action.actions[i].open);
+						}
+						else
+						{
+							this.openLink(action.actions[i].open);
+						}
+					}
+				}
+
+	    		this.model.beginUpdate();
+	    		try
+	    		{
+					for (var i = 0; i < action.actions.length; i++)
+					{
+						this.handleLinkAction(action.actions[i]);
+					}
+				}
+	    		finally
+	    		{
+	    			this.model.endUpdate();
+	    		}
+			}
+		}
+	};
+
+	/**
+	 * Executes the given action if it must be executed inside of a transaction.
+	 */
+	Graph.prototype.handleLinkAction = function(action)
+	{
+		var cells = [];
+		
+		if (action.select != null && this.isEnabled())
+		{
+			cells = this.getCellsForAction(action.select);
+			this.setSelectionCells(cells);
+		}
+		
+		if (action.scroll != null)
+		{
+			cells = this.getCellsForAction(action.scroll);
+		}
+		
+		if (action.toggle != null)
+		{
+			this.toggleCells(this.getCellsForAction(action.toggle));
+		}
+		
+		if (action.show != null)
+		{
+			this.setCellsVisible(this.getCellsForAction(action.show), true);
+		}
+		
+		if (action.hide != null)
+		{
+			this.setCellsVisible(this.getCellsForAction(action.hide), false);
+		}
+
+		if (action.highlight != null)
+		{
+			cells = this.getCellsForAction(action.highlight);
+			this.highlightCells(cells, action.highlight.color,
+				action.highlight.duration, action.highlight.opacity);
+		}
+
+		if (cells.length > 0)
+		{
+			this.scrollCellToVisible(cells[0]);
+		}
+	};
+
+	/**
+	 * Handles each action in the action array of a custom link. This code
+	 * handles toggle actions for cell IDs.
+	 */
+	Graph.prototype.getCellsForAction = function(action)
+	{
+		return this.getCellsById(action.cells).concat(
+			this.getCellsForTags(action.tags));
+	};
+	
+	/**
+	 * Returns the cells in the model (or given array) that have all of the
+	 * given tags in their tags property.
+	 */
+	Graph.prototype.getCellsById = function(ids)
+	{
+		var result = [];
+		
+		if (ids != null)
+		{
+			for (var i = 0; i < ids.length; i++)
+			{
+				if (ids[i] == '*')
+				{
+					var parent = this.getDefaultParent();
+					
+					result = result.concat(this.model.filterDescendants(function(cell)
+					{
+						return cell != parent;
+					}, parent));
+				}
+				else
+				{
+					var cell = this.model.getCell(ids[i]);
+					
+					if (cell != null)
+					{
+						result.push(cell);
+					}
+				}
+			}
+		}
+		
+		return result;
+	};
+	
+	/**
+	 * Returns the cells in the model (or given array) that have all of the
+	 * given tags in their tags property.
+	 */
+	Graph.prototype.getCellsForTags = function(tagList, cells, propertyName)
+	{
+		var result = [];
+		
+		if (tagList != null)
+		{
+			cells = (cells != null) ? cells : this.model.getDescendants(this.model.getRoot());
+			propertyName = (propertyName != null) ? propertyName : 'tags';
+			
+			for (var i = 0; i < cells.length; i++)
+			{
+				if (this.model.isVertex(cells[i]) || this.model.isEdge(cells[i]))
+				{
+					var tags = (cells[i].value != null && typeof(cells[i].value) == 'object') ?
+						mxUtils.trim(cells[i].value.getAttribute(propertyName) || '') : '';
+					var match = true;
+	
+					if (tags.length > 0)
+					{
+						var tmp = tags.toLowerCase().split(' ');
+						
+						for (var j = 0; j < tagList.length && match; j++)
+						{
+							var tag = mxUtils.trim(tagList[j]).toLowerCase();
+							
+							match = match && (tag.length == 0 || mxUtils.indexOf(tmp, tag) >= 0);
+						}
+					}
+					else
+					{
+						match = tagList.length == 0;
+					}
+					
+					if (match)
+					{
+						result.push(cells[i]);
+					}
+				}
+			}
+		}
+		
+		return result;
+	};
+
+	/**
+	 * Shows or hides the given cells.
+	 */
+	Graph.prototype.toggleCells = function(cells)
+	{
+		this.model.beginUpdate();
+		try
+		{
+			for (var i = 0; i < cells.length; i++)
+			{
+				this.model.setVisible(cells[i], !this.model.isVisible(cells[i]))
+			}
+		}
+		finally
+		{
+			this.model.endUpdate();
+		}
+	};
+	
+	/**
+	 * Shows or hides the given cells.
+	 */
+	Graph.prototype.setCellsVisible = function(cells, visible)
+	{
+		this.model.beginUpdate();
+		try
+		{
+			for (var i = 0; i < cells.length; i++)
+			{
+				this.model.setVisible(cells[i], visible);
+			}
+		}
+		finally
+		{
+			this.model.endUpdate();
+		}
 	};
 	
 	/**
 	 * Highlights the given cell.
 	 */
-	Graph.prototype.highlightCell = function(cell, color, duration)
+	Graph.prototype.highlightCells = function(cells, color, duration, opacity)
+	{
+		for (var i = 0; i < cells.length; i++)
+		{
+			this.highlightCell(cells[i], color, duration, opacity);
+		}
+	};
+	
+	/**
+	 * Highlights the given cell.
+	 */
+	Graph.prototype.highlightCell = function(cell, color, duration, opacity)
 	{
 		color = (color != null) ? color : mxConstants.DEFAULT_VALID_COLOR;
 		duration = (duration != null) ? duration : 1000;
@@ -1379,6 +1676,12 @@
 		{
 			var sw = Math.max(5, mxUtils.getValue(state.style, mxConstants.STYLE_STROKEWIDTH, 1) + 4);
 			var hl = new mxCellHighlight(this, color, sw, false);
+			
+			if (opacity != null)
+			{
+				hl.opacity = opacity;
+			}
+			
 			hl.highlight(state);
 			
 			// Fades out the highlight after a duration
@@ -1550,7 +1853,7 @@
 	mxStencilRegistry.libraries['mockup'] = [SHAPES_PATH + '/mockup/mxMockupButtons.js'];
 	
 	mxStencilRegistry.libraries['arrows2'] = [SHAPES_PATH + '/mxArrows.js'];
-	mxStencilRegistry.libraries['atlassian'] = [STENCIL_PATH + '/atlassian.xml'];
+	mxStencilRegistry.libraries['atlassian'] = [STENCIL_PATH + '/atlassian.xml', SHAPES_PATH + '/mxAtlassian.js'];
 	mxStencilRegistry.libraries['bpmn'] = [SHAPES_PATH + '/bpmn/mxBpmnShape2.js', STENCIL_PATH + '/bpmn.xml'];
 	mxStencilRegistry.libraries['er'] = [SHAPES_PATH + '/er/mxER.js'];
 	mxStencilRegistry.libraries['flowchart'] = [SHAPES_PATH + '/mxFlowchart.js', STENCIL_PATH + '/flowchart.xml'];
@@ -2120,10 +2423,12 @@
 				doc.writeln('messageStyle: "none",');
 				doc.writeln('jax: ["input/TeX", "input/MathML", "input/AsciiMath", "output/HTML-CSS"],');
 				doc.writeln('extensions: ["tex2jax.js", "mml2jax.js", "asciimath2jax.js"],');
+				doc.writeln('"HTML-CSS": {');
+				doc.writeln('imageFont: null');
+				doc.writeln('},');
 				doc.writeln('TeX: {');
 				doc.writeln('extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js", "noUndefined.js"]');
 				doc.writeln('},');
-							// Ignores math in in-place editor
 				doc.writeln('tex2jax: {');
 				doc.writeln('	ignoreClass: "geDisableMathJax"');
 			  	doc.writeln('},');
@@ -2141,7 +2446,7 @@
 				}
 				
 				doc.writeln('</script>');
-				doc.writeln('<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js"></script>');
+				doc.writeln('<script type="text/javascript" src="https://math.draw.io/current/MathJax.js"></script>');
 			}
 			
 			pv.closeDocument();

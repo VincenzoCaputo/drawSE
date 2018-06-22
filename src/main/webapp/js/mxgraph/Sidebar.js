@@ -979,6 +979,7 @@ Sidebar.prototype.addBasicPalette = function(dir)
  */
 Sidebar.prototype.addMiscPalette = function(expand)
 {
+	var sb = this;
 	var lineTags = 'line lines connector connectors connection connections arrow arrows '
 
 	var fns = [
@@ -1043,7 +1044,7 @@ Sidebar.prototype.addMiscPalette = function(expand)
 		this.createVertexTemplateEntry('html=1;whiteSpace=wrap;comic=1;strokeWidth=2;fontFamily=Comic Sans MS;fontStyle=1;', 120, 60, 'RECTANGLE', 'Comic Rectangle', true, null, 'comic rectangle rect box text retro'),
 	 	this.createVertexTemplateEntry('rhombus;html=1;align=center;whiteSpace=wrap;comic=1;strokeWidth=2;fontFamily=Comic Sans MS;fontStyle=1;', 100, 100, 'DIAMOND', 'Comic Diamond', true, null, 'comic diamond rhombus if condition decision conditional question test retro'),
 	 	this.createVertexTemplateEntry('html=1;whiteSpace=wrap;aspect=fixed;shape=isoRectangle;', 150, 90, '', 'Isometric Square', true, null, 'rectangle rect box iso isometric'),
-	 	this.createVertexTemplateEntry('html=1;whiteSpace=wrap;aspect=fixed;shape=isoCube;', 90, 100, '', 'Isometric Cube', true, null, 'cube box iso isometric'),
+	 	this.createVertexTemplateEntry('html=1;whiteSpace=wrap;aspect=fixed;shape=isoCube;backgroundOutline=1;', 90, 100, '', 'Isometric Cube', true, null, 'cube box iso isometric'),
 	 	this.createEdgeTemplateEntry('edgeStyle=isometricEdgeStyle;endArrow=none;html=1;', 50, 100, '', 'Isometric Edge 1'),
 	 	this.createEdgeTemplateEntry('edgeStyle=isometricEdgeStyle;endArrow=none;html=1;elbow=vertical;', 50, 100, '', 'Isometric Edge 2'),
 	 	this.createVertexTemplateEntry('shape=curlyBracket;whiteSpace=wrap;html=1;rounded=1;', 20, 120, '', 'Curly Bracket'),
@@ -1067,7 +1068,7 @@ Sidebar.prototype.addMiscPalette = function(expand)
 			symbol.vertex = true;
 			cell.insert(symbol);
 
-	    		return sb.createVertexTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Shape Group');
+    		return sb.createVertexTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Shape Group');
 		}),
 	 	this.createVertexTemplateEntry('shape=partialRectangle;whiteSpace=wrap;html=1;left=0;right=0;fillColor=none;', 120, 60, '', 'Partial Rectangle'),
 		this.createVertexTemplateEntry('shape=partialRectangle;whiteSpace=wrap;html=1;bottom=1;right=1;top=0;bottom=1;fillColor=none;routingCenterX=-0.5;', 120, 60, '', 'Partial Rectangle'),
@@ -1120,10 +1121,10 @@ Sidebar.prototype.createAdvancedShapes = function()
 	 	this.createVertexTemplateEntry('shape=corner;whiteSpace=wrap;html=1;', 80, 80, '', 'Corner'),
 	 	this.createVertexTemplateEntry('shape=tee;whiteSpace=wrap;html=1;', 80, 80, '', 'Tee'),
 	 	this.createVertexTemplateEntry('shape=datastore;whiteSpace=wrap;html=1;', 60, 60, '', 'Data Store', null, null, 'data store cylinder database'),
-	 	this.createVertexTemplateEntry('shape=orEllipse;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;', 80, 80, '', 'Or', null, null, 'or circle oval ellipse'),
-	 	this.createVertexTemplateEntry('shape=sumEllipse;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;', 80, 80, '', 'Sum', null, null, 'sum circle oval ellipse'),
-	 	this.createVertexTemplateEntry('shape=lineEllipse;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;', 80, 80, '', 'Ellipse with horizontal divider', null, null, 'circle oval ellipse'),
-	 	this.createVertexTemplateEntry('shape=lineEllipse;line=vertical;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;', 80, 80, '', 'Ellipse with vertical divider', null, null, 'circle oval ellipse'),
+	 	this.createVertexTemplateEntry('shape=orEllipse;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;backgroundOutline=1;', 80, 80, '', 'Or', null, null, 'or circle oval ellipse'),
+	 	this.createVertexTemplateEntry('shape=sumEllipse;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;backgroundOutline=1;', 80, 80, '', 'Sum', null, null, 'sum circle oval ellipse'),
+	 	this.createVertexTemplateEntry('shape=lineEllipse;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;backgroundOutline=1;', 80, 80, '', 'Ellipse with horizontal divider', null, null, 'circle oval ellipse'),
+	 	this.createVertexTemplateEntry('shape=lineEllipse;line=vertical;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;backgroundOutline=1;', 80, 80, '', 'Ellipse with vertical divider', null, null, 'circle oval ellipse'),
 	 	this.createVertexTemplateEntry('shape=sortShape;perimeter=rhombusPerimeter;whiteSpace=wrap;html=1;', 80, 80, '', 'Sort', null, null, 'sort'),
 	 	this.createVertexTemplateEntry('shape=collate;whiteSpace=wrap;html=1;', 80, 80, '', 'Collate', null, null, 'collate'),
 	 	this.createVertexTemplateEntry('shape=switch;whiteSpace=wrap;html=1;', 60, 60, '', 'Switch', null, null, 'switch router'),
@@ -2460,11 +2461,10 @@ Sidebar.prototype.createDragSource = function(elt, dropHandler, preview, cells, 
 		{
 			this.editorUi.hoverIcons.update(graph.view.getState(graph.getSelectionCell()));
 		}
-	}),
-	preview, 0, 0, this.editorUi.editor.graph.autoscroll, true, true);
+	}), preview, 0, 0, graph.autoscroll, true, true);
 
 	// Stops dragging if cancel is pressed
-	this.editorUi.editor.graph.addListener(mxEvent.ESCAPE, function(sender, evt)
+	graph.addListener(mxEvent.ESCAPE, function(sender, evt)
 	{
 		if (dragSource.isActive())
 		{
@@ -3150,33 +3150,53 @@ Sidebar.prototype.itemClicked = function(cells, ds, evt, elt)
 Sidebar.prototype.addClickHandler = function(elt, ds, cells)
 {
 	var graph = this.editorUi.editor.graph;
+	var oldMouseDown = ds.mouseDown;
+	var oldMouseMove = ds.mouseMove;
 	var oldMouseUp = ds.mouseUp;
+	var tol = graph.tolerance;
 	var first = null;
+	var sb = this;
 
-	mxEvent.addGestureListeners(elt, function(evt)
+	ds.mouseDown =function(evt)
 	{
+		oldMouseDown.apply(this, arguments);
 		first = new mxPoint(mxEvent.getClientX(evt), mxEvent.getClientY(evt));
-	});
 
-	ds.mouseUp = mxUtils.bind(this, function(evt)
-	{
-		if (!mxEvent.isPopupTrigger(evt) && this.currentGraph == null && first != null)
+		if (this.dragElement != null)
 		{
-			var tol = graph.tolerance;
+			this.dragElement.style.display = 'none';
+			mxUtils.setOpacity(elt, 50);
+		}
+	};
 
-			if (Math.abs(first.x - mxEvent.getClientX(evt)) <= tol &&
-				Math.abs(first.y - mxEvent.getClientY(evt)) <= tol)
-			{
-				this.itemClicked(cells, ds, evt, elt);
-			}
+	ds.mouseMove = function(evt)
+	{
+		if (this.dragElement != null && this.dragElement.style.display == 'none' &&
+			first != null && (Math.abs(first.x - mxEvent.getClientX(evt)) > tol ||
+			Math.abs(first.y - mxEvent.getClientY(evt)) > tol))
+		{
+			this.dragElement.style.display = '';
+			mxUtils.setOpacity(elt, 100);
+		}
+
+		oldMouseMove.apply(this, arguments);
+	};
+
+	ds.mouseUp = function(evt)
+	{
+		if (!mxEvent.isPopupTrigger(evt) && this.currentGraph == null &&
+			this.dragElement != null && this.dragElement.style.display == 'none')
+		{
+			sb.itemClicked(cells, ds, evt, elt);
 		}
 
 		oldMouseUp.apply(ds, arguments);
+		mxUtils.setOpacity(elt, 100);
 		first = null;
 
 		// Blocks tooltips on this element after single click
-		this.currentElt = elt;
-	});
+		sb.currentElt = elt;
+	};
 };
 
 /**

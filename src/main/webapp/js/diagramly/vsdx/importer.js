@@ -54,6 +54,66 @@ var com;
                 		return mxVsdxCodec.vsdxPlaceholder;
                 };
                 
+                mxVsdxCodec.parsererrorNS_$LI$ = function ()
+                {
+            		if (mxVsdxCodec.parsererrorNS == null)
+            		{
+            			mxVsdxCodec.parsererrorNS = "";
+            			
+            			if (window.DOMParser) 
+            			{
+	            			var parser = new DOMParser();
+	            			
+	            			try
+	            			{
+	            				mxVsdxCodec.parsererrorNS = parser.parseFromString('<', 'text/xml').getElementsByTagName("parsererror")[0].namespaceURI;
+	            			}
+	            			catch(e)
+	            			{
+	            				//ignore! IE11 throw an exception on XML syntax error
+	            			}
+            			}
+        			}
+
+            		return mxVsdxCodec.parsererrorNS;
+                };
+                
+                mxVsdxCodec.parseXml = function (xml) 
+                {
+                	try
+                	{
+                		var doc = mxUtils.parseXml(xml);
+                		
+                		if (doc.getElementsByTagNameNS(mxVsdxCodec.parsererrorNS, 'parsererror').length > 0)
+                		{
+                			return null;
+                		}
+                		else
+            			{
+                			return doc;
+            			}
+                	}
+                	catch (e) 
+                	{
+                		//IE11 throw an exception on XML syntax error
+                		return null; 
+                	}
+                };
+                
+                //TODO Optimize this function
+                mxVsdxCodec.decodeUTF16LE = function ( binaryStr ) 
+                {
+                    var cp = "";
+                    for( var i = 0; i < binaryStr.length; i+=2) 
+                    {
+                        cp += String.fromCharCode( 
+                             binaryStr.charCodeAt(i) |
+                            ( binaryStr.charCodeAt(i+1) << 8 )
+                        );
+                    }
+
+                    return cp ;
+                }
                 /**
                  * Parses the input VSDX format and uses the information to populate
                  * the specified graph.
@@ -170,7 +230,24 @@ var com;
 	                    	{
 	                    		var dateAfter = new Date();
 		                         //console.log(processedFiles + " File extracted in " + (dateAfter - dateBefore) + "ms");
-		                         allDone();
+		                     	try
+		                    	{
+		                     		allDone();
+		                    	}
+		                    	catch(e)
+		                    	{
+		                    		console.log(e);
+		                    		
+		                    		if (onerror != null) 
+		                    		{
+		                    			onerror();
+		                    		}
+		                    		else
+		                    		{
+		                    			callback("");
+		                    		}
+		                    	}
+
 	                    	}
                     };
                     
@@ -199,25 +276,30 @@ var com;
 	                            	filesCount++;
 	        	                    zipEntry.async("string").then(function (str) 
 	        	                  	{
-	        	                    		if (!(str.length === 0)) {
+        	                    		if (!(str.length === 0)) {
 	        	    						//UTF-8 BOM causes exception while parsing, so remove it
 	        	    						//TODO is the text encoding will be correct or string must be re-read as UTF-8?
-	                                        if ((function (str, searchString, position) {
-	                                            if (position === void 0) { position = 0; }
-	                                            return str.substr(position, searchString.length) === searchString;
-	                                        })(str, "\u00ef\u00bb\u00bf"))
-	                                            str = str.substring(3);
-	                                        var doc = mxUtils.parseXml(str);
-	                                        if (doc == null) { //FIXME TODO find a way to change encoding in javascript
-	//                                            var outBytes = out.toByteArray();
-	//                                            if (outBytes[1] === 0 && outBytes[3] === 0 && outBytes[5] === 0) {
-	//                                                str = out.toString("UTF-16LE");
-	//                                                doc = mxUtils.parseXml(str);
-	//                                            }
+	                                        if (str.charCodeAt(0) == 65279)
+                                        	{
+	                                            str = str.substring(1);
+                                        	}
+	                                        
+	                                        var doc = mxVsdxCodec.parseXml(str);
+	                                        
+	                                        if (doc == null) 
+	                                        {
+	                                        	if (str.charCodeAt(1) === 0 && str.charCodeAt(3) === 0 && str.charCodeAt(5) === 0)
+                                        		{
+	                                        		doc = mxVsdxCodec.parseXml(mxVsdxCodec.decodeUTF16LE(str));
+                                        		}
 	                                        	//TODO add any other non-standard encoding that may be needed 
 	                                        }
-	                                        doc.vsdxFileName = filename;
-	                                        /* put */ (docData[filename] = doc);
+	                                        
+	                                        if (doc != null)
+                                        	{
+		                                        doc.vsdxFileName = filename;
+		                                        /* put */ (docData[filename] = doc);
+                                        	}
 	                                    }
 		        	                    	processedFiles++;
 		
@@ -1170,7 +1252,7 @@ var com;
                                         	{
                                             	shapeName_1 = "";
                                         	}
-                                            shapeName_1 = JSON.stringify(shapeName_1);
+                                            shapeName_1 = JSON.stringify(mxUtils.htmlEntities(shapeName_1));
                                             /* append */ (function (sb) { return sb.str = sb.str.concat(shapeName_1); })(shapes_1);
                                             /* append */ (function (sb) { return sb.str = sb.str.concat("}"); })(shapes_1);
                                             comma_1 = ",";
@@ -11687,6 +11769,7 @@ com.mxgraph.io.vsdx.mxVsdxConstants.SET_VALUES_$LI$();
 com.mxgraph.io.vsdx.mxPropertiesManager.defaultColors_$LI$();
 com.mxgraph.io.vsdx.mxPropertiesManager.__static_initialize();
 com.mxgraph.io.mxVsdxCodec.vsdxPlaceholder_$LI$();
+com.mxgraph.io.mxVsdxCodec.parsererrorNS_$LI$();
 
 EditorUi.prototype.doImportVisio = function(file, done, onerror)
 {
