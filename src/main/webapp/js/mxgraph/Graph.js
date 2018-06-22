@@ -976,27 +976,30 @@ mxUtils.extend(Graph, mxGraph);
 	 */
 	 var intersectCells = new Array();
 	 for(i=0; i<cells.length; i++) {
+		 intersectCells = new Array();
 		 if(allCells.indexOf(cells[i]>=0)) {
 			 if(this.view.getState(cells[i])!=null) {
-				intersectCells = this.getCloseSymbols(cells[i], allCells, new Array());
 				intersectCells.push(cells[i]);
-				var attr = shapeCreator.mergeShapes(intersectCells, false, false);
-				//Inserisco il nuovo simbolo creato
-				var groupProp = attr.shapeGeo;
-				var xmlBase64 = attr.base64;
-				this.getModel().beginUpdate();
-			  try {
-			    v1 = this.insertVertex(this.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
-			    //Rimuovo gli elementi che ora fanno parte del simbolo
-			    this.removeCells(intersectCells);
-			  } finally {
-			    this.getModel().endUpdate();
-			  }
-				//Per evitare che il testo venga nascosto dal simbolo
-				var vertexToGroup = attr.text;
-				if(vertexToGroup.length>0) {
-					vertexToGroup.push(v1);
-					this.setSelectionCell(this.groupCells(null, 0, vertexToGroup.reverse()));
+				intersectCells = intersectCells.concat(this.getCloseSymbols(cells[i], allCells, new Array()));
+				if(intersectCells.length>1) {
+					var attr = shapeCreator.mergeShapes(intersectCells, false, false);
+					//Inserisco il nuovo simbolo creato
+					var groupProp = attr.shapeGeo;
+					var xmlBase64 = attr.base64;
+					this.getModel().beginUpdate();
+				  try {
+				    v1 = this.insertVertex(this.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
+				    //Rimuovo gli elementi che ora fanno parte del simbolo
+				    this.removeCells(intersectCells);
+				  } finally {
+				    this.getModel().endUpdate();
+				  }
+					//Per evitare che il testo venga nascosto dal simbolo
+					var vertexToGroup = attr.text;
+					if(vertexToGroup.length>0) {
+						vertexToGroup.push(v1);
+						this.setSelectionCell(this.groupCells(null, 0, vertexToGroup.reverse()));
+					}
 				}
 			}
 		}
@@ -1020,17 +1023,21 @@ mxUtils.extend(Graph, mxGraph);
 */
 Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 	delete allCells[allCells.indexOf(cellCompare)];
+
 	var closestCells = this.getModel().filterDescendants(mxUtils.bind(this, function(cell) {
+		var returnValue = false;
+
 		if((cell.vertex || cell.edge) && allCells.indexOf(cell)>=0) {
 			 var perimeter1 = this.view.getState(cell).getPerimeterBounds(5);
 			 var perimeter2 = this.view.getState(cellCompare).getPerimeterBounds(5);
 			 if(mxUtils.intersects(perimeter1, perimeter2)) {
 				 delete allCells[allCells.indexOf(cell)];
-				 return true;
+				 returnValue = true;
 			 } else {
-				 return false;
+				 returnValue = false;
 			 }
 		}
+		return returnValue;
 	}));
 
 	var j;
@@ -1115,8 +1122,12 @@ Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 		 var shapeCreator =new ShapeCreator(this);
 
 		 if(stencils[i].style.includes('stencil(')) {
-				shapeCreator.unmergeShape(stencils[i]);
-
+			 try {
+					shapeCreator.unmergeShape(stencils[i]);
+				} catch(err) {
+					console.log('Launched exception '+err);
+					continue;
+				}
 		 } else {
 			 this.setSelectionCell(stencils[i]);
 			 this.ungroupCells();

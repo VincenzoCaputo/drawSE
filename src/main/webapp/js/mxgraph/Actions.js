@@ -262,6 +262,11 @@ Actions.prototype.init = function()
 					cellsToMerge.push(selectionCells[i]);
 				}
 			}
+			var constraintCells = graph.getModel().filterDescendants(function(cell) {
+	 		 if((cell.vertex || cell.edge) && cell.isConstraint()) {
+	 			 return true;
+	 		 }
+	 	 });
 			var i;
 			for(i=0; i<cellsToMerge.length; i++) {
 				if(graph.getCellStyle(cellsToMerge[i])[mxConstants.STYLE_SHAPE].includes('stencil(')) {
@@ -270,6 +275,7 @@ Actions.prototype.init = function()
 					cellsToTransform = cellsToTransform.concat(cells);
 				} else {
 					cellsToTransform.push(cellsToMerge[i]);
+					//cellsToTransform = cellsToTransform.concat(graph.getCloseSymbols(cellsToMerge[i], constraintCells, new Array()));
 				}
 
 			}
@@ -323,16 +329,21 @@ Actions.prototype.init = function()
 			} else {
 				cellToTransform = selectionCell;
 			}
-		  var cellsAdded = shapeCreator.unmergeShape(cellToTransform);
-			var i;
-			for(i=0; i<cellsAdded.length; i++) {
-				if(cellsAdded[i].isConstraint()) {
-					cellsAdded[i].visible = false;
-				}
-			}
-			graph.refresh();
-			//Porto in avanti il testo per renderlo visibile
-			graph.orderCells(false, textNodes);
+			try {
+			var cellsAdded = shapeCreator.unmergeShape(cellToTransform);
+			 var i;
+			 for(i=0; i<cellsAdded.length; i++) {
+				 if(cellsAdded[i].isConstraint()) {
+					 cellsAdded[i].visible = false;
+				 }
+			 }
+			 graph.refresh();
+			 //Porto in avanti il testo per renderlo visibile
+			 graph.orderCells(false, textNodes);
+		 } catch(err) {
+			 mxUtils.alert('I can\'t translate a XML shape with an arc tag');
+		 }
+
 
 	});
 	// Adds action

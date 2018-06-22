@@ -716,11 +716,14 @@
 			mxLog.show();
 			mxLog.textarea.value = '';
 		}
-
+		var palettesName = ['stencil', 'arrows', 'atlassian', 'basic', 'bootstrap','bpmn','cabinets','citrix','eip','floorplan','flowchart','gmdl','lean_mapping','networks'];
 		this.addSearchPalette(true);
 		this.addNewPaletteButton();
 		this.addGeneralPalette(true);
-		this.addStencilPalette('Stencil', 'Stencil', STENCIL_PATH+'/stencil.xml',';html=1;');
+		var i;
+		for(i=0; i<palettesName.length; i++) {
+			this.addStencilPalette(palettesName[i], palettesName[i], STENCIL_PATH+'/'+palettesName[i]+'.xml',';html=1;');
+		}
 	};
 	/**
 	 *	Aggiunge un bottone per creare nuove palette (scratchpad)

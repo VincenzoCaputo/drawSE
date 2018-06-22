@@ -94,21 +94,22 @@ ShapeCreator.prototype.getSizeAndPosition = function (group) {
   //Calcolo le coordinate massime e minime
   var i;
   for(i=1; i<group.length; i++) {
-    var cb = this.graph.view.getState(group[i]).getCellBounds();
+    if(!group[i].isConstraint()) {
+      var cb = this.graph.view.getState(group[i]).getCellBounds();
 
-    if(cb.x+cb.width > maxX) {
-      maxX = cb.x+cb.width;
+      if(cb.x+cb.width > maxX) {
+        maxX = cb.x+cb.width;
+      }
+      if(cb.x < minX) {
+        minX = cb.x;
+      }
+      if(cb.y+cb.height > maxY) {
+        maxY = cb.y+cb.height;
+      }
+      if(cb.y < minY) {
+        minY = cb.y;
+      }
     }
-    if(cb.x < minX) {
-      minX = cb.x;
-    }
-    if(cb.y+cb.height > maxY) {
-      maxY = cb.y+cb.height;
-    }
-    if(cb.y < minY) {
-      minY = cb.y;
-    }
-
   }
   return {x: minX, y: minY, w: maxX-minX, h: maxY-minY};
 }
@@ -823,13 +824,14 @@ ShapeCreator.prototype.getPointOnQuadCurve = function(t, p1, p2, p3) {
 
 ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
   var geoCell = cellToTransform.getGeometry();
+
   var stencil = this.graph.getCellStyle(cellToTransform)[mxConstants.STYLE_SHAPE];
   var shapeXml;
   //Se lo stencil è definito in base64, effettuo il decode per ottenere l'xml
   if(stencil.includes('stencil(')) {
     var base64 = stencil.substring(8, stencil.length-1);
     var desc = this.graph.decompress(base64);
-    shapeXml = mxUtils.parseXml(desc);
+    shapeXml = mxUtils.parseXml(desc).documentElement;
   } else {
     /*
     Se lo stencil è definito da un nome, allora è presente nello mxStencilRegistry.
@@ -840,18 +842,31 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
   var cellsToAdd = []; //Lista dei simboli componenti da aggiungere all'editor
   var lastCells = []; //Simboli inserite nell'ultima iterazione (necessario per modificare lo stile)
 
+  var xmlShapeGeo = {width: shapeXml.getAttribute('w', geoCell.width), height: shapeXml.getAttribute('h', geoCell.height)};
   var connectionsNode = shapeXml.getElementsByTagName('connections')[0];
   var connectionChildNodes = this.getAllElementChildNodes(connectionsNode);
 
   var i;
+  var inArea = false;
   for(i=0; i<connectionChildNodes.length; i++) {
     var node = connectionChildNodes[i];
-    if(node.tagName == 'constraint' && node.getAttribute('name')[0] == 'P') {
-      var x = node.getAttribute('x')*geoCell.width+geoCell.x-2.5;
-      var y = node.getAttribute('y')*geoCell.height+geoCell.y-2.5;
+    if(node.tagName == 'constraint' && (!inArea || node.getAttribute('name')==null || node.getAttribute('name','P')[0] == 'P')) {
+      inArea = false;
+      var x = node.getAttribute('x')*xmlShapeGeo.width+geoCell.x-2.5;
+      var y = node.getAttribute('y')*xmlShapeGeo.height+geoCell.y-2.5;
       var doc = mxUtils.createXmlDocument();
       var nodeCell = doc.createElement('AttackSymbol');
-		  nodeCell.setAttribute('label', '');
+      if(node.getAttribute('name')!=null) {
+        var name = node.getAttribute('name','');
+        var match = name.match(/^P{1}[0123456789]*_/g);
+        var index = 0;
+        if(match!=null) {
+          index = match[0].length;
+        }
+		    nodeCell.setAttribute('label', name.substring(index, name.length));
+      } else {
+        nodeCell.setAttribute('label', '');
+      }
 			nodeCell.setAttribute('isConstraint', 1);
       var cell = new mxCell(nodeCell, new mxGeometry(x, y, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
       cell.vertex = true;
@@ -859,6 +874,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       //cell.visible = false;
       cellsToAdd.push(cell);
     } else if(node.tagName == 'lineattack' || node.tagName == 'curveattack') {
+      inArea = true;
       var points = JSON.parse(this.graph.decompress(node.getAttribute('x')));
 
       var lineGeometry = new mxGeometry();
@@ -872,7 +888,17 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       lineGeometry.targetPoint = new mxPoint(geoCell.x+points[j].x, geoCell.y+points[j].y);
       var doc = mxUtils.createXmlDocument();
       var nodeCell = doc.createElement('AttackSymbol');
-		  nodeCell.setAttribute('label', '');
+      if(node.nextSibling.getAttribute('name')!=null) {
+        var name = node.nextSibling.getAttribute('name','');
+        var match = name.match(/^(L|C){1}[0123456789]*_/g);
+        var index = 0;
+        if(match!=null) {
+          index = match[0].length;
+        }
+		    nodeCell.setAttribute('label', name.substring(index, name.length));
+      } else {
+        nodeCell.setAttribute('label', '');
+      }
 			nodeCell.setAttribute('isConstraint', 1);
       var style;
       if(node.tagName == 'lineattack') {
@@ -886,6 +912,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       //cell.visible = false;
       cellsToAdd.push(cell);
     } else if(node.tagName == 'areaattack') {
+      inArea = true;
       var stencil = node.getAttribute('stencil');
       var sourcePoint_x = geoCell.x+Number(node.getAttribute('x').substring(1));
       var sourcePoint_y = geoCell.y+Number(node.getAttribute('y').substring(1));
@@ -894,7 +921,17 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       var areaGeometry = new mxGeometry(sourcePoint_x, sourcePoint_y, dimension_w, dimension_h);
       var doc = mxUtils.createXmlDocument();
       var nodeCell = doc.createElement('AttackSymbol');
-		  nodeCell.setAttribute('label', '');
+      if(node.nextSibling.getAttribute('name')!=null) {
+        var name = node.nextSibling.getAttribute('name','');
+        var match = name.match(/^A{1}[0123456789]*_/g);
+        var index = 0;
+        if(match!=null) {
+          index = match[0].length;
+        }
+		    nodeCell.setAttribute('label', name.substring(index, name.length));
+      } else {
+        nodeCell.setAttribute('label', '');
+      }
 			nodeCell.setAttribute('isConstraint', 1);
       var style = '';
       if(Number(node.getAttribute('area'))==1) {
@@ -912,53 +949,67 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       cellsToAdd.push(cell);
     }
   }
+  try {
+    var backgroundNode = shapeXml.getElementsByTagName('background')[0];
+    cellsToAdd = cellsToAdd.concat(this.getShapeFromXml(backgroundNode, geoCell, xmlShapeGeo));
+    var foregroundNode = shapeXml.getElementsByTagName('foreground')[0];
+    cellsToAdd = cellsToAdd.concat(this.getShapeFromXml(foregroundNode, geoCell, xmlShapeGeo));
+  } catch(err) {
+    throw 'Found arc tag';
+  }
+  this.graph.getModel().beginUpdate();
+  cellsToAdd = this.graph.addCells(cellsToAdd);
+  this.graph.removeCells([cellToTransform]);
+  this.graph.getModel().endUpdate();
+  this.graph.refresh();
+  return cellsToAdd;
+}
 
-
-  var foregroundNode = shapeXml.getElementsByTagName('foreground')[0];
-  var foregroundChildNodes = this.getAllElementChildNodes(foregroundNode);
-
-
+ShapeCreator.prototype.getShapeFromXml = function(parentNode, shapeGeo, xmlShapeGeo) {
+  var parentChildNodes = this.getAllElementChildNodes(parentNode);
+  var childCells = [];
+  var styleCell = [];
   var i;
-  for(i=0; i<foregroundChildNodes.length; i++) {
-    var node = foregroundChildNodes[i];
+  for(i=0; i<parentChildNodes.length; i++) {
+    var node = parentChildNodes[i];
 
     var groupProp;
     if(node.tagName == 'image') {
       lastCells = [];
       var cell = new mxCell();
-      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
+      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+shapeGeo.x, Number(node.getAttribute('y'))+shapeGeo.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
       cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, 'image');
       cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_IMAGE, node.getAttribute('src').replace(';base64',''));
       cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_STROKEWIDTH, 1);
       cell.vertex = true;
       cell.connectable = false;
-      cellsToAdd.push(cell);
+      childCells.push(cell);
       lastCells.push(cell);
     } else if(node.tagName == 'include-shape') {
       lastCells = [];
       var cell = new mxCell();
-      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
+      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+shapeGeo.x, Number(node.getAttribute('y'))+shapeGeo.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
       cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, node.getAttribute('name'));
       cell.vertex = true;
-      cellsToAdd.push(cell);
+      childCells.push(cell);
       lastCells.push(cell);
     } else if(node.tagName == 'rect') {
       lastCells = [];
       var cell = new mxCell();
-      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
+      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+shapeGeo.x, Number(node.getAttribute('y'))+shapeGeo.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
       cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, 'mxgraph.general.rectangle');
       cell.vertex = true;
       cell.connectable = false;
-      cellsToAdd.push(cell);
+      childCells.push(cell);
       lastCells.push(cell);
     } else if(node.tagName == 'ellipse') {
       lastCells = [];
       var cell = new mxCell();
-      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+geoCell.x, Number(node.getAttribute('y'))+geoCell.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
+      cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+shapeGeo.x, Number(node.getAttribute('y'))+shapeGeo.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
       cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, 'mxgraph.general.circle');
       cell.vertex = true;
       cell.connectable = false;
-      cellsToAdd.push(cell);
+      childCells.push(cell);
       lastCells.push(cell);
     } else if(node.tagName == 'path') {
       lastCells = [];
@@ -970,7 +1021,7 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
 
       var currentPoint;
       var prevPoint;
-
+      var movePoint;
       var isLine = false;
       var isCurve = false;
 
@@ -978,9 +1029,10 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
       for(j=0; j<pathNodes.length; j++) {
 
         if(pathNodes[j].tagName == 'move') {
-          currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x'))+geoCell.x, Number(pathNodes[j].getAttribute('y'))+geoCell.y);
+          currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x'))+shapeGeo.x, Number(pathNodes[j].getAttribute('y'))+shapeGeo.y);
+          movePoint = currentPoint;
         } else if(pathNodes[j].tagName == 'line') {
-          currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x'))+geoCell.x, Number(pathNodes[j].getAttribute('y'))+geoCell.y);
+          currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x'))+shapeGeo.x, Number(pathNodes[j].getAttribute('y'))+shapeGeo.y);
           /*Se stavo già disegnando una linea, allora il punto precedente è un contol point
             altrimenti il punto precedente è il punto sorgente. (Nota: il nodo xml line indica tra gli attributi
             SOLO il punto finale)
@@ -1010,12 +1062,12 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
             cell.style = 'endArrow=none;curved=0;rounded=0;';
             cell.edge = true;
             cell.vertex = true;
-            cellsToAdd.push(cell);
+            childCells.push(cell);
             lastCells.push(cell);
           }
         } else if(pathNodes[j].tagName == 'quad') {
-          var point1 = new mxPoint(Number(pathNodes[j].getAttribute('x1'))+geoCell.x, Number(pathNodes[j].getAttribute('y1'))+geoCell.y);
-          currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x2'))+geoCell.x, Number(pathNodes[j].getAttribute('y2'))+geoCell.y);
+          var point1 = new mxPoint(Number(pathNodes[j].getAttribute('x1'))+shapeGeo.x, Number(pathNodes[j].getAttribute('y1'))+shapeGeo.y);
+          currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x2'))+shapeGeo.x, Number(pathNodes[j].getAttribute('y2'))+shapeGeo.y);
           /*
           * Se isCurve è false allora questo è il primo tag riferito alla curva.
           * Il punto sorgente è il precedente, mentre le due coordinate definite dal tag corrente
@@ -1050,14 +1102,16 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
             cell.style = 'endArrow=none;curved=1;';
             cell.edge = true;
             cell.vertex = true;
-            cellsToAdd.push(cell);
+            childCells.push(cell);
             lastCells.push(cell);
           }
+        } else if(pathNodes[j].tagName == 'arc') {
+          throw 'Found arc node';
         } else if(pathNodes[j].tagName == 'close') {
           var cell = new mxCell();
           var newGeo = new mxGeometry();
           newGeo.sourcePoint = currentPoint;
-          newGeo.targetPoint = new mxPoint(Number(pathNodes[0].getAttribute('x'))+geoCell.x, Number(pathNodes[0].getAttribute('y'))+geoCell.y);
+          newGeo.targetPoint = movePoint;
           newGeo.width = 1;
           newGeo.height = 1;
           newGeo.relative = true;
@@ -1065,38 +1119,37 @@ ShapeCreator.prototype.unmergeShape = function(cellToTransform) {
           cell.style = 'endArrow=none;curved=0;rounded=0;';
           cell.edge = true;
           cell.vertex = true;
-          cellsToAdd.push(cell);
+          childCells.push(cell);
           lastCells.push(cell);
         }
         prevPoint = currentPoint;
       }
 
+    } else if(node.tagName == 'fillstroke' || node.tagName == 'stroke') {
+      if(styleCell.length>0) {
+        this.addAttrStyleCells(lastCells, styleCell);
+        styleCell = [];
+      }
     } else if(node.tagName == 'dashed') {
       if(node.getAttribute('dashed')=='1') {
         var dashedPattern;
         if(node.nextSibling.tagName == 'dashpattern') {
-          this.addAttrStyleCells(lastCells, 'dashPattern', node.nextSibling.getAttribute('pattern'));
+          styleCell.push({name: 'dashPattern', value: node.nextSibling.getAttribute('pattern')});
         }
-        this.addAttrStyleCells(lastCells, mxConstants.STYLE_DASHED, 1);
+        styleCell.push({name: mxConstants.STYLE_DASHED, value: 1});
       }
     } else if(node.tagName == 'strokewidth') {
-      this.addAttrStyleCells(lastCells, mxConstants.STYLE_STROKEWIDTH, node.getAttribute('width'));
+      styleCell.push({name: mxConstants.STYLE_STROKEWIDTH, value: node.getAttribute('width')});
     } else if(node.tagName == 'strokecolor') {
-      this.addAttrStyleCells(lastCells, mxConstants.STYLE_STROKECOLOR, node.getAttribute('color'));
+      styleCell.push({name: mxConstants.STYLE_STROKECOLOR, value: node.getAttribute('color')});
     } else if(node.tagName == 'fillcolor') {
-      this.addAttrStyleCells(lastCells, mxConstants.STYLE_FILLCOLOR, node.getAttribute('color'));
+      styleCell.push({name: mxConstants.STYLE_FILLCOLOR, value: node.getAttribute('color')});
     } else {
       continue;
     }
   }
-  this.graph.getModel().beginUpdate();
-  cellsToAdd = this.graph.addCells(cellsToAdd);
-  this.graph.removeCells([cellToTransform]);
-  this.graph.getModel().endUpdate();
-  this.graph.refresh();
-  return cellsToAdd;
+  return childCells;
 }
-
 /*
  *  Questo funzione restituisc tutti i nodi XML figli che non sono testo
  */
@@ -1120,9 +1173,12 @@ ShapeCreator.prototype.getAllElementChildNodes = function(parent) {
  * @param stylename nome dell'attributo dello stile da modificare
  * @param stylevalue nuovo valore da assegnare all'attributo
  */
-ShapeCreator.prototype.addAttrStyleCells = function(cells, stylename, stylevalue) {
+ShapeCreator.prototype.addAttrStyleCells = function(cells, style) {
   var i;
   for(i=0; i<cells.length; i++) {
-    cells[i].style = mxUtils.setStyle(cells[i].style, stylename, stylevalue);
+    var j;
+    for(j=0; j<style.length; j++) {
+      cells[i].style = mxUtils.setStyle(cells[i].style, style[j].name, style[j].value);
+    }
   }
 }
