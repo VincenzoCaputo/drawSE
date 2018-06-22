@@ -1023,9 +1023,22 @@ mxUtils.extend(Graph, mxGraph);
 */
 Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 	delete allCells[allCells.indexOf(cellCompare)];
-
+	var flagConstraint = false;
+	//Rendo il simbolo visible per poter leggere lo stato
+	if(cellCompare.isConstraint() && !cellCompare.visible) {
+		flagConstraint = true;
+		cellCompare.visible = true;
+		this.refresh();
+	}
 	var closestCells = this.getModel().filterDescendants(mxUtils.bind(this, function(cell) {
 		var returnValue = false;
+		var flag = false;
+		//Rendo il simbolo visible per poter leggere lo stato
+		if(cell.isConstraint() && !cell.visible) {
+			flag = true;
+			cell.visible = true;
+			this.refresh();
+		}
 
 		if((cell.vertex || cell.edge) && allCells.indexOf(cell)>=0) {
 			 var perimeter1 = this.view.getState(cell).getPerimeterBounds(5);
@@ -1037,9 +1050,18 @@ Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 				 returnValue = false;
 			 }
 		}
+		if(flag) {
+			flag = false;
+			cell.visible = false;
+			this.refresh();
+		}
 		return returnValue;
 	}));
-
+	if(flagConstraint) {
+		flagConstraint = false;
+		cellCompare.visible = false;
+		this.refresh();
+	}
 	var j;
 	var cs = new Array();
 	//Per ogni simbolo vicino, trovo ricorsivamente i simboli vicini
