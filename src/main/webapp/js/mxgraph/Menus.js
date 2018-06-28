@@ -513,11 +513,11 @@ Menus.prototype.get = function(name)
 Menus.prototype.addSubmenu = function(name, menu, parent, label)
 {
 	var entry = this.get(name);
-	
+
 	if (entry != null)
 	{
 		var enabled = entry.isEnabled();
-	
+
 		if (menu.showDisabled || enabled)
 		{
 			var submenu = menu.addItem(label || mxResources.get(name), null, null, parent, null, enabled);
@@ -1079,7 +1079,7 @@ Menus.prototype.createPopupMenu = function(menu, cell, evt)
 				menu.addSeparator();
 				this.addMenuItems(menu, ['merge'], null, evt);
 			}
-			if(graph.getSelectionCount() == 1) {
+			if(graph.getSelectionCount()==1 && (graph.getSelectionCell().style.includes('stencil') || graph.getSelectionCell().style.includes('group'))) {
 				menu.addSeparator();
 				this.addMenuItems(menu, ['unmerge'], null, evt);
 			}

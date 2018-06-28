@@ -689,16 +689,16 @@
 			var fns = [
 				this.addEntry('point', mxUtils.bind(this, function()
 				{
-					var cell = new mxCell(node, new mxGeometry(0, 0, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=0;');
+					var cell = new mxCell(node, new mxGeometry(0, 0, 5, 5), 'ellipse;rotatable=0;resizable=0;fillColor=#d5e8d4;dashed=0;strokeColor=#80FF00;strokeWidth=0;');
 					cell.vertex = true;
 					cell.connectable = false;
 					return this.createVertexTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Point');
 				})),
-				this.createEdgeTemplateEntry('endArrow=none;html=1;rounded=0;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=2;opacity=70;dashed=0;', 50, 50, node, 'Attack Line', null, lineTags + 'simple undirected plain blank no'),
+				this.createEdgeTemplateEntry('endArrow=none;html=1;rounded=0;rotatable=0;resizable=0;fillColor=#d5e8d4;dashed=0;strokeColor=#80FF00;strokeWidth=2;opacity=70;dashed=0;', 50, 50, node, 'Attack Line', null, lineTags + 'simple undirected plain blank no'),
 
 				this.addEntry('atckcurve', mxUtils.bind(this, function()
 				{
-					var cell = new mxCell(node, new mxGeometry(0, 0, 50, 50), 'curved=1;endArrow=none;html=1;rotatable=0;resizable=0;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;dashed=0;');
+					var cell = new mxCell(node, new mxGeometry(0, 0, 50, 50), 'curved=1;endArrow=none;html=1;rotatable=0;resizable=0;dashed=0;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;dashed=0;');
 					cell.geometry.setTerminalPoint(new mxPoint(0, 50), true);
 					cell.geometry.setTerminalPoint(new mxPoint(50, 0), false);
 					cell.geometry.points = [new mxPoint(50, 50), new mxPoint(0, 0)];
@@ -707,10 +707,10 @@
 
 						return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Attack Curve');
 				})),
-				this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'SquareArea', null, null, 'SquareArea'),
-				this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'CircleArea', null, null, 'CircleArea'),
-				this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=none;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeOutline, 'SquareOutline', null, null, 'SquareOutline'),
-				this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=none;strokeColor=#80FF00;strokeWidth=2;opacity=70;', 100, 100, nodeOutline, 'CircleOutline', null, null, 'CircleOutline'),
+				this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=#CDEB8B;strokeColor=#80FF00;dashed=0;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'SquareArea', null, null, 'SquareArea'),
+				this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=#CDEB8B;strokeColor=#80FF00;dashed=0;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'CircleArea', null, null, 'CircleArea'),
+				this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=none;strokeColor=#80FF00;dashed=0;strokeWidth=2;opacity=70;', 100, 100, nodeOutline, 'SquareOutline', null, null, 'SquareOutline'),
+				this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=none;strokeColor=#80FF00;dashed=0;strokeWidth=2;opacity=70;', 100, 100, nodeOutline, 'CircleOutline', null, null, 'CircleOutline'),
 
 			 ];
 
@@ -733,13 +733,13 @@
 			mxLog.show();
 			mxLog.textarea.value = '';
 		}
-		var palettesName = ['stencil', 'arrows', 'atlassian', 'basic', 'bootstrap','bpmn','cabinets','citrix','eip','floorplan','flowchart','gmdl','lean_mapping','networks'];
+		var palettesName = ['arrows', 'atlassian', 'basic', 'bootstrap','bpmn','cabinets','citrix','eip','floorplan','flowchart','gmdl','lean_mapping','networks'];
 		this.addSearchPalette(true);
 		this.addNewPaletteButton();
 		this.addGeneralPalette(true);
 		var i;
 		for(i=0; i<palettesName.length; i++) {
-			this.addStencilPalette(palettesName[i], palettesName[i], STENCIL_PATH+'/'+palettesName[i]+'.xml',';html=1;');
+			this.addStencilPalette(palettesName[i], palettesName[i], STENCIL_PATH+'/'+palettesName[i]+'.xml',';html=1;fillColor=#FFFFFF;strokeColor=#000000;');
 		}
 	};
 	/**

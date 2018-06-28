@@ -402,7 +402,8 @@ Format.prototype.refresh = function()
 	}
 	else
 	{
-		var containsLabel = this.getSelectionState().containsLabel;
+		//var containsLabel = this.getSelectionState().containsLabel;
+		var containsLabel = false;
 		var currentLabel = null;
 		var currentPanel = null;
 
@@ -418,7 +419,7 @@ Format.prototype.refresh = function()
 					}
 					else
 					{
-						this.currentIndex = 0/*index*/;
+						this.currentIndex = index;
 					}
 
 					if (currentLabel != null)
@@ -471,8 +472,6 @@ Format.prototype.refresh = function()
 		{
 			label2.style.borderLeftWidth = '0px';
 		}
-		else
-		{
 			//Se il simbolo selezionato è uno shape il tab style viene mostrato solo se si è nella modalità modifica shape
 		if((graph.isShapeMode() && !graph.selectionContainsConstraints()) || (graph.isConstraintMode() && graph.selectionContainsOnlyConstraints()))  {
 				label.style.borderLeftWidth = '0px';
@@ -486,7 +485,6 @@ Format.prototype.refresh = function()
 
 				addClickHandler(label, stylePanel, idx++);
 			}
-		}
 
 		// Text
 		//Se il simbolo selezionato è uno shape il tab Text viene mostrato solo se si è nella modalità modifica shape
@@ -511,6 +509,12 @@ Format.prototype.refresh = function()
 
 
 		addClickHandler(label3, arrangePanel, idx++);
+
+		if(this.panels[this.currentIndex]==null) {
+			this.currentIndex = 0;
+			this.refresh();
+		}
+
 	}
 };
 
@@ -1450,7 +1454,7 @@ ArrangePanel.prototype.init = function()
 		this.addEdgeGeometry(this.container);
 	}
 	if(graph.isShapeMode() && !graph.selectionContainsConstraints()){
-		if (!ss.containsLabel || ss.edges.length == 0)
+		if(false)
 		{
 			this.container.appendChild(this.addAngle(this.createPanel()));
 		}
@@ -1747,7 +1751,7 @@ ArrangePanel.prototype.addGroupOps = function(div)
 		count++;
 	}
 	//Aggiungo il bottone per creare lo shape
-	if(graph.getSelectionCount() > 0) {
+	if(graph.getSelectionCount() > 1) {
 		if( count > 0) {
 			mxUtils.br(div);
 		}
@@ -2020,7 +2024,7 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 
 				if(evt.target.checked) {
 					if(graph.selectionContainsOnlyEdges()) {
-						var shCr = new ShapeCreator(graph);
+						var shCr = graph.stencilManager;
 						var attr = shCr.mergeShapes(selectedCells, true, true);
 						var groupProp = attr.shapeGeo;
 						var xmlBase64 = attr.base64;
@@ -2047,7 +2051,7 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 					var selectedCellColor = graph.getCellStyle(selectedCells[0])[mxConstants.STYLE_STROKECOLOR];
 					var selectedCellShape = graph.getCellStyle(selectedCells[0])[mxConstants.STYLE_SHAPE];
 						if(selectedCellShape.includes('stencil(')) {
-							var shCr = new ShapeCreator(graph);
+							var shCr = graph.stencilManager;
 							var constraints = shCr.unmergeShape(selectedCells[0]);
 							var j;
 							for(j=0; j<constraints.length; j++) {

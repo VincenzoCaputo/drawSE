@@ -971,7 +971,7 @@ mxUtils.extend(Graph, mxGraph);
 			 return true;
 		 }
 	 }));
-	 var shapeCreator =new ShapeCreator(this);
+	 var shapeCreator = this.stencilManager;
 	 var i;
 	 /*
 	 Per ogni simbolo parent mi ricavo tutti gli altri simboli che si intersecano con esso, presumendo
@@ -1137,6 +1137,14 @@ Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 	*	Questa funzione mostra tutti i punti di attacco nascosti
 		*/
  Graph.prototype.showConstraints = function() {
+	 var connectedEdges = this.getModel().filterDescendants(function(cell) {
+		 if(cell.edge==true && (cell.source!=null || cell.target!=null)){
+			 return true;
+		 }
+	 });
+
+	 this.disconnectEdges(connectedEdges);
+
 	 var stencils = this.getModel().filterDescendants(function(cell) {
 		 if(cell.vertex==true && !cell.isConstraint() && cell.getAttribute('locked','0')=='0' && (cell.getStyle().includes('stencil(') || cell.getStyle().includes('group'))) {
 			 return true;
@@ -1144,15 +1152,14 @@ Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 	 });
 	 var i;
 	 for(i=0; i<stencils.length; i++) {
-		 var shapeCreator =new ShapeCreator(this);
+		/* var edgeCount = stencils[i].getEdgeCount();
+		 if(edgeCount>0) {
+			 this.removeEdgesFromCell(stencils[i], edgeCount);
+		 }*/
+		 var shapeCreator = this.stencilManager;
 
-		 if(stencils[i].style.includes('stencil(')) {
-			 try {
-					shapeCreator.unmergeShape(stencils[i]);
-				} catch(err) {
-					console.log('Launched exception '+err);
-					continue;
-				}
+		 if(stencils[i].style.includes('stencil(') && stencils[i].getAttribute('locked','0')!='1') {
+				shapeCreator.unmergeShape(stencils[i]);
 		 } else {
 			 this.setSelectionCell(stencils[i]);
 			 this.ungroupCells();
@@ -1173,6 +1180,36 @@ Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 	 this.orderCells(false,cells);
 	 this.refresh();
  }
+
+ Graph.prototype.disconnectEdges = function(edgesConn) {
+	 var edges = [];
+	 var i;
+
+	 for(i=0; i<edgesConn.length; i++) {
+		 var edgeStyle = this.getCellStyle(edgesConn[i]);
+		 if(edgesConn[i].getTerminal(true) !=null) {
+			 var cellBounds= this.view.getState(edgesConn[i].getTerminal(true)).getCellBounds();
+			 	var sourcePoint = new mxPoint();
+				edgesConn[i].setTerminal(null, true);
+				var exit_x = edgeStyle[mxConstants.STYLE_EXIT_X];
+				var exit_y = edgeStyle[mxConstants.STYLE_EXIT_Y];
+				sourcePoint.x = exit_x*cellBounds.width+cellBounds.x;
+				sourcePoint.y = exit_y*cellBounds.height+cellBounds.y;
+				edgesConn[i].getGeometry().sourcePoint = sourcePoint;
+		 }
+		 if(edgesConn[i].getTerminal(false) != null) {
+			 var cellBounds= this.view.getState(edgesConn[i].getTerminal(false)).getCellBounds();
+			 var targetPoint = new mxPoint();
+			 edgesConn[i].setTerminal(null, false);
+			 var entry_x = edgeStyle[mxConstants.STYLE_ENTRY_X];
+			 var entry_y = edgeStyle[mxConstants.STYLE_ENTRY_Y];
+			 targetPoint.x = entry_x*cellBounds.width+cellBounds.x;
+			 targetPoint.y = entry_y*cellBounds.height+cellBounds.y;
+			 edgesConn[i].getGeometry().targetPoint = targetPoint;
+		 }
+	 }
+ }
+
 /**Override delle funzioni per la modifica dei simboli*/
 
  Graph.prototype.isCellEditable = function(cell) {
@@ -1473,6 +1510,8 @@ Graph.prototype.baseUrl = (urlParams['base'] != null) ?
  */
 Graph.prototype.editAfterInsert = false;
 
+Graph.prototype.stencilManager = null;
+
 /**
  * Installs child layout styles.
  */
@@ -1530,6 +1569,8 @@ Graph.prototype.init = function(container)
 	};
 
 	this.initLayoutManager();
+
+	this.stencilManager = new StencilManager(this);
 };
 
 /**
@@ -4714,6 +4755,7 @@ if (typeof mxVertexHandler != 'undefined')
 		{
 			var style = this.graph.createCurrentEdgeStyle();
 			var edge = this.graph.createEdge(null, null, null, null, null, style);
+
 			var state = new mxCellState(this.graph.view, edge, this.graph.getCellStyle(edge));
 
 			for (var key in this.graph.currentEdgeStyle)
@@ -4787,7 +4829,8 @@ if (typeof mxVertexHandler != 'undefined')
 		 */
 		Graph.prototype.createCurrentEdgeStyle = function()
 		{
-			var style = 'edgeStyle=' + (this.currentEdgeStyle['edgeStyle'] || 'none') + ';';
+			var style = "endArrow=none;html=1;fillColor=none;strokeColor=#000000;rounded=0;";
+			/*var style = 'edgeStyle=' + (this.currentEdgeStyle['edgeStyle'] || 'none') + ';';
 
 			if (this.currentEdgeStyle['shape'] != null)
 			{
@@ -4832,7 +4875,7 @@ if (typeof mxVertexHandler != 'undefined')
 			else
 			{
 				style += 'html=1;';
-			}
+			}*/
 
 			return style;
 		};

@@ -189,7 +189,6 @@
 			// ignore
 		}
 	})();
-
 	/**
 	 * Questa funzione permette di cambiare la modalità dell'editor
 	 */
@@ -1928,7 +1927,8 @@
 	 */
 	EditorUi.prototype.isScratchpadEnabled = function()
 	{
-		return isLocalStorage || mxClient.IS_CHROMEAPP;
+		return false;
+		//return isLocalStorage || mxClient.IS_CHROMEAPP;
 	};
 
 	/**
@@ -2715,6 +2715,9 @@
 
 		title.appendChild(buttons);
 		title.style.paddingRight = (buttons.childNodes.length * btnWidth) + 'px';
+		if(this.scratchpad!=null) {
+			this.closeLibrary(this.scratchpad);
+		}
 	};
 
 	/**
@@ -10828,5 +10831,4 @@
 			}
 		};
 	}
-
 })();

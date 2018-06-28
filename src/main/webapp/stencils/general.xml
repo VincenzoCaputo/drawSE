@@ -1,10 +1,10 @@
 <shapes name="mxgraph.general">
-	<shape name="rectangle" h="50" w="100" aspect="variable" strokewidth="inherit">
+	<shape name="rectangle" h="100" w="100" aspect="variable" strokewidth="inherit">
 	  <background>
 	  </background>
 	  <foreground>
 		<fillstroke/>
-		<rect x="0" y="0" w="100" h="50"/>
+		<rect x="0" y="0" w="100" h="100"/>
 		<fillstroke/>
 	  </foreground>
 	</shape>

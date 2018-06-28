@@ -2695,7 +2695,7 @@ Sidebar.prototype.createDragSource = function(elt, dropHandler, preview, cells, 
 	var sourceCellStyle = this.editorUi.editor.graph.getCellStyle(cells[0]);
 
 	// Allows drop into cell only if target is a valid root
-	dragSource.getDropTarget = mxUtils.bind(this, function(graph, x, y, evt)
+/*	dragSource.getDropTarget = mxUtils.bind(this, function(graph, x, y, evt)
 	{
 		// Alt means no targets at all
 		// LATER: Show preview where result will go
@@ -3063,7 +3063,7 @@ Sidebar.prototype.createDragSource = function(elt, dropHandler, preview, cells, 
 
 		return target;
 	});
-
+*/
 	dragSource.stopDrag = function()
 	{
 		mxDragSource.prototype.stopDrag.apply(this, arguments);

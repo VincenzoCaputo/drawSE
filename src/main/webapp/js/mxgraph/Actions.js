@@ -298,7 +298,7 @@ Actions.prototype.init = function()
 	this.addAction('removeFromGroup', function() { graph.removeCellsFromParent(); });
 	//Aggiungo action per la creazione di uno shape
 	this.addAction('merge', function() {
-			var shapeCreator = new ShapeCreator(graph);
+			var shapeCreator = graph.stencilManager;
 			var selectionCells = graph.getSelectionCells();
 			var cellsToMerge = new Array();
 			var cellsToTransform = new Array();
@@ -319,7 +319,7 @@ Actions.prototype.init = function()
 	 	 });
 			var i;
 			for(i=0; i<cellsToMerge.length; i++) {
-				if(graph.getCellStyle(cellsToMerge[i])[mxConstants.STYLE_SHAPE].includes('stencil(')) {
+				if(graph.getCellStyle(cellsToMerge[i])[mxConstants.STYLE_SHAPE].includes('stencil(') && cellsToMerge[i].getAttribute('locked','0')!='1') {
 					var cells = shapeCreator.unmergeShape(cellsToMerge[i]);
 
 					cellsToTransform = cellsToTransform.concat(cells);
@@ -356,7 +356,7 @@ Actions.prototype.init = function()
 
 	});
 	this.addAction('unmerge', function() {
-			var shapeCreator =new ShapeCreator(graph);
+			var shapeCreator = graph.stencilManager;
 			var selectionCell = graph.getSelectionCells()[0];
 			var cellToTransform;
 			/*
@@ -379,7 +379,7 @@ Actions.prototype.init = function()
 			} else {
 				cellToTransform = selectionCell;
 			}
-			try {
+
 			var cellsAdded = shapeCreator.unmergeShape(cellToTransform);
 			 var i;
 			 for(i=0; i<cellsAdded.length; i++) {
@@ -390,9 +390,6 @@ Actions.prototype.init = function()
 			 graph.refresh();
 			 //Porto in avanti il testo per renderlo visibile
 			 graph.orderCells(false, textNodes);
-		 } catch(err) {
-			 mxUtils.alert('I can\'t translate a XML shape with an arc tag');
-		 }
 
 
 	});

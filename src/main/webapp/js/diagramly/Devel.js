@@ -24,7 +24,7 @@ mxscript(geBasePath +'/Actions.js');
 mxscript(geBasePath +'/Menus.js');
 mxscript(geBasePath +'/Toolbar.js');
 mxscript(geBasePath +'/Dialogs.js');
-mxscript(geBasePath +'/ShapeCreator.js');
+mxscript(geBasePath +'/StencilManager.js');
 
 // Loads main classes
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar.js');
