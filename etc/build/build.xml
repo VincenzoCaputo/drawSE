@@ -95,7 +95,7 @@
 				<file name="Menus.js" />
 				<file name="Toolbar.js" />
 				<file name="Dialogs.js" />
-				<file name="ShapeCreator.js" />
+				<file name="StencilManager.js" />
 			</sources>
 		</jscomp>
 
