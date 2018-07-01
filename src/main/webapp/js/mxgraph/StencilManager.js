@@ -21,11 +21,13 @@ StencilManager.prototype.mergeShapes = function(cellGroup, stroke, isPath, color
   var root = this.xmlDoc.createElement('shape');
   root.setAttribute('h',groupProp.h);
   root.setAttribute('w',groupProp.w);
-  root.setAttribute('aspect','fixed');
+  root.setAttribute('aspect','variable');
   root.setAttribute('strokewidth','inherit');
   this.xmlDoc.appendChild(root);
   //Definisco i due tag figli
+  //Nodo contenente i punti di attacco
   var connectionsNode = this.xmlDoc.createElement('connections');
+  //Nodo contenente i tag che definiscono il simbolo
   var fgNode = this.xmlDoc.createElement('foreground');
   fgNode.appendChild(this.xmlDoc.createElement('fillstroke'));
   //Creo un array in cui inserire le celle da raggruppare e che costituiranno lo shape finale
@@ -57,6 +59,7 @@ StencilManager.prototype.mergeShapes = function(cellGroup, stroke, isPath, color
   }
   root.appendChild(connectionsNode);
   root.appendChild(fgNode);
+  //Genero la codifica in base64 del documento XML che descrive il simbolo
   var xmlBase64 = this.graph.compress(mxUtils.getXml(root));
 
   return {base64: xmlBase64, shapeGeo: groupProp, text: vertex};
@@ -78,7 +81,7 @@ StencilManager.prototype.getSizeAndPosition = function (group) {
   //Calcolo le coordinate massime e minime
   var i;
   for(i=1; i<group.length; i++) {
-    if(!group[i].isConstraint()) {
+    if(group[i].isVisible()) {
       var cb = this.graph.view.getState(group[i]).getCellBounds();
 
       if(cb.x+cb.width > maxX) {
@@ -110,7 +113,7 @@ StencilManager.prototype.getShapeXml = function(shape, groupProp, stroke) {
   //Creo dei frammenti in cui inserire gli elementi XML rappresentante il simbolo
   var fgNode = this.xmlDoc.createDocumentFragment();
   var constraintNodes = this.xmlDoc.createDocumentFragment();
-
+  //Se il simbolo rappresenta un punto di attacco, aggiungo i tag per lo stile del simbolo
   if(!shape.isConstraint()) {
     if(this.graph.getCellStyle(shape)[mxConstants.STYLE_DASHED]) {
       var dashedNode = this.xmlDoc.createElement('dashed');
@@ -284,6 +287,7 @@ StencilManager.prototype.getPathXml = function(lines, groupProp, stroke, parent)
   }
   var nextEdge = 0;
   var reverse = false;
+  //Aggiungo il tag che rappresenta il punto di partenza
   var moveNode = this.xmlDoc.createElement('move');
   moveNode.setAttribute('x',edges[nextEdge].points[0].x-groupProp.x);
   moveNode.setAttribute('y',edges[nextEdge].points[0].y-groupProp.y);
@@ -451,6 +455,20 @@ StencilManager.prototype.createSubStencilNode = function(shape, groupProp) {
     includeShapeNode.setAttribute('w', shapeState.cellBounds.width);
     includeShapeNode.setAttribute('h', shapeState.cellBounds.height);
     shapeNodes.appendChild(includeShapeNode);
+  } else if(shapeName.includes('arc')) {
+    var desc = mxStencilRegistry.getStencil(shapeName).desc;
+    var pathNode = desc.getElementsByTagName('path')[0];
+    var moveNode = pathNode.childNodes[0];
+    var arcNode = pathNode.childNodes[1];
+    var x = (Number(moveNode.getAttribute('x'))+shapeState.origin.x)-groupProp.x;
+    var y = (Number(moveNode.getAttribute('y'))+shapeState.origin.y)-groupProp.y;
+    moveNode.setAttribute('x',x);
+    moveNode.setAttribute('y',y);
+    var x = (Number(arcNode.getAttribute('x'))+shapeState.origin.x)-groupProp.x;
+    var y = (Number(arcNode.getAttribute('y'))+shapeState.origin.y)-groupProp.y;
+    arcNode.setAttribute('x',x);
+    arcNode.setAttribute('y',y);
+    shapeNodes.appendChild(pathNode);
   } else if(shape.getAttribute('locked','0')=='1') {
     var base64 = shapeName.substring(8, shapeName.length-1);
     var desc = this.graph.decompress(base64);
@@ -536,6 +554,12 @@ StencilManager.prototype.createCurveNode = function(shape, groupProp) {
   return pathNode;
 }
 
+/**
+  Questo metodo crea un nodo XML che descrive un'immagine.
+  @param shape rappresentazione grafica dell'immagine'
+  @param groupProp proprietà della selezione degli elementi
+  @return nodo xml che rappresenta l'immagine
+*/
 StencilManager.prototype.createImageNode = function(shape, groupProp) {
   var state = this.graph.getView().getState(shape);
   var url = state.style[mxConstants.STYLE_IMAGE];
@@ -566,6 +590,12 @@ StencilManager.prototype.createPointConstraintNode = function(point, groupProp) 
   return constraintNode;
 }
 
+/**
+  Questo metodo restituisce una lista di punti di attacco, disposti lungo una linea
+  passata come parametro.
+  @param line oggetto che rappresenta la linea sulla quale disporre i punti di attacco
+  @param groupProp prorietà geometriche degli oggetti da trasformare
+*/
 StencilManager.prototype.createLineConstraintNode = function(line, groupProp) {
   var points = line.getAllPoints();
   var lineAttackNode = this.xmlDoc.createDocumentFragment();
@@ -634,7 +664,12 @@ StencilManager.prototype.createLineConstraintNode = function(line, groupProp) {
   return lineAttackNode;
 }
 
-
+/**
+  Questo metodo restituisce una lista di punti di attacco, disposti lungo una curva
+  passata come parametro.
+  @param curve oggetto che rappresenta la curva sulla quale disporre i punti di attacco
+  @param groupProp prorietà geometriche degli oggetti da trasformare
+*/
 StencilManager.prototype.createCurveConstraintNode = function(curve, groupProp) {
   var points = curve.getAllPoints();
   var curveLineNode = this.xmlDoc.createDocumentFragment();
@@ -705,6 +740,12 @@ StencilManager.prototype.createCurveConstraintNode = function(curve, groupProp) 
   return curveLineNode;
 }
 
+/**
+  Questo metodo restituisce una lista di punti di attacco, disposti all'interno
+  di un simbolo passato come parametro
+  @param area oggetto che rappresenta il simbolo nel quale disporre i punti di attacco
+  @param groupProp prorietà geometriche degli oggetti da trasformare
+*/
 StencilManager.prototype.createAreaConstraintNode = function(area, groupProp) {
   var stencil = this.graph.getCellStyle(area)[mxConstants.STYLE_SHAPE];
   //Creo un canvas
@@ -731,14 +772,6 @@ StencilManager.prototype.createAreaConstraintNode = function(area, groupProp) {
     for(col=0;col<=areaHeight;col=col+5) {
       if(ctx.isPointInPath(row,col,'evenodd') || ctx.isPointInStroke(row,col)) {
         var cn = this.xmlDoc.createElement('constraint');
-        /*var xc, yc;
-        if(shape.edge) {
-          xc = row;
-          yc = col;
-        } else {
-          xc = (attachedPoints[j].getGeometry().x + row);
-          yc = (attachedPoints[j].getGeometry().y + col);
-        }*/
         cn.setAttribute('x', (relX+row)/groupProp.w);
         cn.setAttribute('y', (relY+col)/groupProp.h);
         cn.setAttribute('name','A'+area.id+'_'+area.getAttribute('label',''));
@@ -749,6 +782,7 @@ StencilManager.prototype.createAreaConstraintNode = function(area, groupProp) {
   }
   return constraintNode;
 }
+
 /**
  *  Questa funzione restituisce un frammento XML contenente i punti di attacco sul contorno di uno stencil
  *  @param shape stencil di cui si vogliono rappresentare in XML i punto di attacco del contorno
@@ -815,6 +849,10 @@ StencilManager.prototype.createStencilOutlineConstraintNode = function(shape, gr
     return constraintNodes;
 }
 
+/**
+  Questo metodo restituisce un punto sulla curva definita dai punti passati come parametro.
+
+*/
 StencilManager.prototype.getPointOnQuadCurve = function(t, p1, p2, p3) {
 	var t2 = (1-t)*(1-t);
 	var t3 = 2*(1-t)*t;
@@ -824,8 +862,11 @@ StencilManager.prototype.getPointOnQuadCurve = function(t, p1, p2, p3) {
 	return ({x: x,y: y});
 }
 
-
-
+/**
+  Questo metodo traduce uno stencil (XML) passato come parametro, in un insieme
+  di simboli (rappresentati da oggetti mxCell)
+  @param cellToTransform stencil XML da trasformare
+*/
 StencilManager.prototype.unmergeShape = function(cellToTransform) {
   var geoCell = cellToTransform.getGeometry();
 
@@ -892,8 +933,8 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
       lineGeometry.targetPoint = new mxPoint(geoCell.x+points[j].x, geoCell.y+points[j].y);
       var doc = mxUtils.createXmlDocument();
       var nodeCell = doc.createElement('AttackSymbol');
-      if(node.nextSibling.getAttribute('name')!=null) {
-        var name = node.nextSibling.getAttribute('name','');
+      if(node.nextElementSibling.getAttribute('name')!=null) {
+        var name = node.nextElementSibling.getAttribute('name','');
         var match = name.match(/^(L|C){1}[0123456789]*_/g);
         var index = 0;
         if(match!=null) {
@@ -925,8 +966,8 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
       var areaGeometry = new mxGeometry(sourcePoint_x, sourcePoint_y, dimension_w, dimension_h);
       var doc = mxUtils.createXmlDocument();
       var nodeCell = doc.createElement('AttackSymbol');
-      if(node.nextSibling.getAttribute('name')!=null) {
-        var name = node.nextSibling.getAttribute('name','');
+      if(node.nextElementSibling.getAttribute('name')!=null) {
+        var name = node.nextElementSibling.getAttribute('name','');
         var match = name.match(/^A{1}[0123456789]*_/g);
         var index = 0;
         if(match!=null) {
@@ -966,6 +1007,9 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
   return cellsToAdd;
 }
 
+/**
+  Questo metodo traduce i tag XML in shape.
+*/
 StencilManager.prototype.getShapeFromXml = function(parentNode, shapeGeo, xmlShapeGeo) {
   var parentChildNodes = this.getAllElementChildNodes(parentNode);
   var childCells = [];
@@ -1123,38 +1167,28 @@ StencilManager.prototype.getShapeFromXml = function(parentNode, shapeGeo, xmlSha
             controlPoint.push(point1);
           }
           controlPoint.push(point2);
-          /*
-            Se il prossimo tag descrive una curva, allora il terzo punto del tag corrente (ossia currentPoint)
-            è un punto di controllo. Altrimenti il currentPoint è il punto terminale.
-          */
-        /*  if(j<pathNodes.length-1 && pathNodes[j+1].tagName == 'curve') {
-            var xc = currentPoint.x * 2 - point1.x;
-            var yc = currentPoint.y * 2 - point1.y;
-            controlPoint.push(new mxPoint(xc, yc));
-          } else {*/
-            terminalPoint = new mxPoint(currentPoint.x, currentPoint.y);
-            isCurve = false;
-            var cell = new mxCell();
-            var newGeo = new mxGeometry();
-            newGeo.sourcePoint = sourcePoint;
-            newGeo.points = controlPoint;
-            newGeo.targetPoint = terminalPoint;
-            newGeo.width = 1;
-            newGeo.height = 1;
-            newGeo.relative = true;
-            cell.setGeometry(newGeo);
-            cell.style = 'endArrow=none;curved=1;';
-            cell.edge = true;
-            cell.vertex = true;
-            childCells.push(cell);
-            lastCells.push(cell);
-        //  }
+          terminalPoint = new mxPoint(currentPoint.x, currentPoint.y);
+          isCurve = false;
+          var cell = new mxCell();
+          var newGeo = new mxGeometry();
+          newGeo.sourcePoint = sourcePoint;
+          newGeo.points = controlPoint;
+          newGeo.targetPoint = terminalPoint;
+          newGeo.width = 1;
+          newGeo.height = 1;
+          newGeo.relative = true;
+          cell.setGeometry(newGeo);
+          cell.style = 'endArrow=none;curved=1;';
+          cell.edge = true;
+          cell.vertex = true;
+          childCells.push(cell);
+          lastCells.push(cell);
         } else if(pathNodes[j].tagName == 'arc') {
           var arcShapeDocument = mxUtils.createXmlDocument();
           var arcRootNode = arcShapeDocument.createElement('shape');
           arcRootNode.setAttribute('h',xmlShapeGeo.height);
           arcRootNode.setAttribute('w',xmlShapeGeo.width);
-          arcRootNode.setAttribute('aspect','fixed');
+          arcRootNode.setAttribute('aspect','variable');
           arcRootNode.setAttribute('strokewidth','inherit');
           var arcForegroundNode = arcShapeDocument.createElement('foreground');
           var arcPathNode = arcShapeDocument.createElement('path');
@@ -1166,7 +1200,7 @@ StencilManager.prototype.getShapeFromXml = function(parentNode, shapeGeo, xmlSha
           arcForegroundNode.appendChild(arcPathNode);
           arcForegroundNode.appendChild(arcShapeDocument.createElement('fillstroke'));
           arcRootNode.appendChild(arcForegroundNode);
-          var stencilName = 'arc'+this.graph.getModel().nextId+'_'+j;
+          var stencilName = 'arc'+this.graph.getModel().nextId+'_'+j+'_'+i;
           mxStencilRegistry.addStencil(stencilName, new mxStencil(arcRootNode));
           var arcBase64 = this.graph.compress(mxUtils.getXml(arcRootNode));
           var cell = new mxCell();
@@ -1177,7 +1211,6 @@ StencilManager.prototype.getShapeFromXml = function(parentNode, shapeGeo, xmlSha
           childCells.push(cell);
           lastCells.push(cell);
           currentPoint = new mxPoint(Number(pathNodes[j].getAttribute('x'))+shapeGeo.x, Number(pathNodes[j].getAttribute('y'))+shapeGeo.y);
-          //throw 'Found arc node';
         } else if(pathNodes[j].tagName == 'close') {
           var cell = new mxCell();
           var newGeo = new mxGeometry();
@@ -1204,8 +1237,8 @@ StencilManager.prototype.getShapeFromXml = function(parentNode, shapeGeo, xmlSha
     } else if(node.tagName == 'dashed') {
       if(node.getAttribute('dashed')=='1') {
         var dashedPattern;
-        if(node.nextSibling.tagName == 'dashpattern') {
-          styleCell.push({name: 'dashPattern', value: node.nextSibling.getAttribute('pattern')});
+        if(node.nextElementSibling.tagName == 'dashpattern') {
+          styleCell.push({name: 'dashPattern', value: node.nextElementSibling.getAttribute('pattern')});
         }
         styleCell.push({name: mxConstants.STYLE_DASHED, value: 1});
       }
@@ -1222,7 +1255,7 @@ StencilManager.prototype.getShapeFromXml = function(parentNode, shapeGeo, xmlSha
   return childCells;
 }
 /*
- *  Questo funzione restituisc tutti i nodi XML figli che non sono testo
+ *  Questo funzione restituisce tutti i nodi XML figli che non sono testo
  */
 StencilManager.prototype.getAllElementChildNodes = function(parent) {
   var elementChildren = [];

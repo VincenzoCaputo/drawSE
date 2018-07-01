@@ -296,6 +296,61 @@ Actions.prototype.init = function()
 		}
 	}, null, null, Editor.ctrlKey + '+Shift+U');
 	this.addAction('removeFromGroup', function() { graph.removeCellsFromParent(); });
+	this.addAction('areaConstraint', function() {
+
+		var selectedCells = graph.getSelectionCells();
+		if(graph.selectionContainsOnlyEdges()) {
+			var shCr = graph.stencilManager;
+			var attr = shCr.mergeShapes(selectedCells, true, true);
+			var groupProp = attr.shapeGeo;
+			var xmlBase64 = attr.base64;
+			var v1;
+			graph.getModel().beginUpdate();
+			try {
+				v1 = graph.insertVertex(graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
+				//Rimuovo gli elementi che ora fanno parte del simbolo
+				graph.removeCells(selectedCells);
+			} finally {
+				graph.getModel().endUpdate();
+			}
+			v1.setConstraint();
+			v1.addAreaConstraint();
+			v1.setStyle(mxUtils.setStyle(v1.style, mxConstants.STYLE_FILLCOLOR, '#CDEB8B'));
+			v1.setStyle(mxUtils.setStyle(v1.style, mxConstants.STYLE_STROKECOLOR, '#A6FF4C'));
+			v1.setStyle(mxUtils.setStyle(v1.style, mxConstants.STYLE_OPACITY, '60'));
+			graph.refresh();
+		} else {
+			selectedCells[0].addAreaConstraint();
+			graph.refresh();
+		}
+		var selectedCell = graph.getSelectionCell();
+		var style = selectedCell.style;
+		style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);
+		graph.getModel().setStyle(selectedCell, style);
+		graph.refresh();
+	});
+	this.addAction('disableAreaConstraint', function() {
+		var selectedCells = graph.getSelectionCells();
+		var selectedCellColor = graph.getCellStyle(selectedCells[0])[mxConstants.STYLE_STROKECOLOR];
+		var selectedCellShape = graph.getCellStyle(selectedCells[0])[mxConstants.STYLE_SHAPE];
+			if(selectedCellShape.includes('stencil(')) {
+				var shCr = graph.stencilManager;
+				var constraints = shCr.unmergeShape(selectedCells[0]);
+				var j;
+				for(j=0; j<constraints.length; j++) {
+
+					constraints[j].setStyle(mxUtils.setStyle(constraints[j].style, mxConstants.STYLE_STROKECOLOR, selectedCellColor));
+					constraints[j].setConstraint();
+				}
+			} else {
+				selectedCells[0].removeAreaConstraint();
+			}
+			var selectedCell = graph.getSelectionCell();
+			var style = selectedCell.style;
+			style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);
+			graph.getModel().setStyle(selectedCell, style);
+			graph.refresh();
+	});
 	//Aggiungo action per la creazione di uno shape
 	this.addAction('merge', function() {
 			var shapeCreator = graph.stencilManager;
@@ -321,7 +376,6 @@ Actions.prototype.init = function()
 			for(i=0; i<cellsToMerge.length; i++) {
 				if(graph.getCellStyle(cellsToMerge[i])[mxConstants.STYLE_SHAPE].includes('stencil(') && cellsToMerge[i].getAttribute('locked','0')!='1') {
 					var cells = shapeCreator.unmergeShape(cellsToMerge[i]);
-
 					cellsToTransform = cellsToTransform.concat(cells);
 				} else {
 					cellsToTransform.push(cellsToMerge[i]);

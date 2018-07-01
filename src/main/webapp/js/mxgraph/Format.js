@@ -1752,25 +1752,36 @@ ArrangePanel.prototype.addGroupOps = function(div)
 	}
 	//Aggiungo il bottone per creare lo shape
 	if(graph.getSelectionCount() > 1) {
-		if( count > 0) {
-			mxUtils.br(div);
+		var i;
+		var selectionContainsChildren = false;
+		var selection = graph.getSelectionCells();
+		for(i=0; i<selection.length; i++) {
+			if(selection[i].source!=null || selection[i].target!=null) {
+				selectionContainsChildren = true;
+				break;
+			}
 		}
-		btn = mxUtils.button(mxResources.get('merge'), function(evt)
-		{
-			ui.actions.get('merge').funct();
-		})
+		if(!selectionContainsChildren) {
+			if( count > 0) {
+				mxUtils.br(div);
+			}
+			btn = mxUtils.button(mxResources.get('merge'), function(evt)
+			{
+				ui.actions.get('merge').funct();
+			})
 
-		btn.setAttribute('title', 'Merge');
-		btn.style.width = '202px';
-		btn.style.marginBottom = '2px';
-		div.appendChild(btn);
-		count++;
+			btn.setAttribute('title', 'Merge');
+			btn.style.width = '202px';
+			btn.style.marginBottom = '2px';
+			div.appendChild(btn);
+			count++;
+		}
 	}
-	if(graph.getSelectionCount()==1 && (graph.getSelectionCell().style.includes('stencil') || graph.getSelectionCell().style.includes('group'))) {
+	if(graph.getSelectionCount()==1 && (graph.getSelectionCell().style.includes('shape=') || graph.getSelectionCell().style.includes('group'))) {
 		if( count > 0) {
 			mxUtils.br(div);
 		}
-		btn = mxUtils.button('Unmerge', function(evt)
+		btn = mxUtils.button('Break Up', function(evt)
 		{
 			ui.actions.get('unmerge').funct();
 		})
@@ -2020,49 +2031,10 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 		}
 
 		this.addCheckBoxInput(div, 'Area constraint', checked, function(evt) {
-				var selectedCells = graph.getSelectionCells();
-
 				if(evt.target.checked) {
-					if(graph.selectionContainsOnlyEdges()) {
-						var shCr = graph.stencilManager;
-						var attr = shCr.mergeShapes(selectedCells, true, true);
-						var groupProp = attr.shapeGeo;
-						var xmlBase64 = attr.base64;
-						var v1;
-						graph.getModel().beginUpdate();
-					  try {
-					    v1 = graph.insertVertex(graph.getDefaultParent(), null, null, groupProp.x, groupProp.y, groupProp.w, groupProp.h, 'shape=stencil('+xmlBase64+');');
-					    //Rimuovo gli elementi che ora fanno parte del simbolo
-					    graph.removeCells(selectedCells);
-					  } finally {
-					    graph.getModel().endUpdate();
-					  }
-						v1.setConstraint();
-						v1.addAreaConstraint();
-						v1.setStyle(mxUtils.setStyle(v1.style, mxConstants.STYLE_FILLCOLOR, '#CDEB8B'));
-						v1.setStyle(mxUtils.setStyle(v1.style, mxConstants.STYLE_STROKECOLOR, '#A6FF4C'));
-						v1.setStyle(mxUtils.setStyle(v1.style, mxConstants.STYLE_OPACITY, '60'));
-						graph.refresh();
-					} else {
-						selectedCells[0].addAreaConstraint();
-						graph.refresh();
-					}
+					ui.actions.get('areaConstraint').funct();
 				} else {
-					var selectedCellColor = graph.getCellStyle(selectedCells[0])[mxConstants.STYLE_STROKECOLOR];
-					var selectedCellShape = graph.getCellStyle(selectedCells[0])[mxConstants.STYLE_SHAPE];
-						if(selectedCellShape.includes('stencil(')) {
-							var shCr = graph.stencilManager;
-							var constraints = shCr.unmergeShape(selectedCells[0]);
-							var j;
-							for(j=0; j<constraints.length; j++) {
-
-								constraints[j].setStyle(mxUtils.setStyle(constraints[j].style, mxConstants.STYLE_STROKECOLOR, selectedCellColor));
-								constraints[j].setConstraint();
-							}
-						} else {
-							selectedCells[0].removeAreaConstraint();
-						}
-						graph.refresh();
+					ui.actions.get('disableAreaConstraint').funct();
 				}
 				var style = selectedCell.style;
 				style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);

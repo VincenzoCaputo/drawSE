@@ -1076,62 +1076,6 @@ Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 	return groupCells;
 }
 
-/**
-*/
-/*Graph.prototype.autoAttachConstraints = function(cellsConstraint, cells) {
-	//Simbolo contenitore più grande (indice dell'array di cells)
-	var containerCell = null;
-	//Area del simbolo contenitore più grande
-	var containerCellArea = null;
-	//array di simboli da trasformare in XML
-	var parentCells = [];
-	var i;
-	//Per ogni punto di attacco, trovo il simbolo contenitore più grande
-	for(i=0; i<cellsConstraint.length; i++) {
-		var j=0;
-		for(j=0; j<cells.length; j++) {
-			//Ricavo il rettangolo circoscritto al simbolo
-			var parentPerimeter = this.view.getState(cells[j]).getPerimeterBounds(10);
-			//Ricavo il rettangolo circoscritto al simbolo constraint
-			var constraintPerimeter = this.view.getState(cellsConstraint[i]).getPerimeterBounds();
-			//Controllo se il punto di attacco è all'interno del perimetro del simbolo corrente
-			if(mxUtils.contains(parentPerimeter,constraintPerimeter.x, constraintPerimeter.y)) {
-				//Considero il simbolo contenitore con l'area più grande
-				if(containerCell == null) {
-					containerCell = j;
-					containerCellArea = parentPerimeter.width*parentPerimeter.height;
-				} else {
-					var area = parentPerimeter.width*parentPerimeter.height;
-					if(area>containerCellArea) {
-						containerCellArea = area;
-						containerCell = j;
-					}
-				}
-			}
-		}
-		//Evito i duplicati
-		if(!parentCells.includes(cells[containerCell])) {
-			 parentCells.push(cells[containerCell]);
-		}
-		//Se il punto di attacco è all'interno di un simbolo allora lo aggiungo come figlio a tale simbolo
-		//Altrimenti il punto d'attacco viene nascosto
-		if(containerCell!=null) {
-			/*Se il simbolo padre non è un edge, quando il punto di attacco viene associato ad un altro simbolo,
-			avrà una posizione relativa rispetto al simbolo parent. Pertanto è necessario traslare il punto di attacco
-			in modo tale da lasciare invariata la sua posizione corrente*/
-		/*	if(!cells[containerCell].edge) {
-				 var symbolPosition = {x: cells[containerCell].getGeometry().x, y: cells[containerCell].getGeometry().y};
-				 cellsConstraint[i].getGeometry().translate(-symbolPosition.x, -symbolPosition.y);
-			}
-			this.getModel().add(cells[containerCell], cellsConstraint[i]);
-			containerCell = null;
-			containerCellArea = null;
-		} else {
-			cellsConstraint[i].setVisible(false);
-		}
-	}
-	return parentCells;
-}*/
 
  /**
 	*	Questa funzione mostra tutti i punti di attacco nascosti
@@ -1150,14 +1094,9 @@ Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 			 return true;
 		 }
 	 });
+	 var shapeCreator = this.stencilManager;
 	 var i;
 	 for(i=0; i<stencils.length; i++) {
-		/* var edgeCount = stencils[i].getEdgeCount();
-		 if(edgeCount>0) {
-			 this.removeEdgesFromCell(stencils[i], edgeCount);
-		 }*/
-		 var shapeCreator = this.stencilManager;
-
 		 if(stencils[i].style.includes('stencil(') && stencils[i].getAttribute('locked','0')!='1') {
 				shapeCreator.unmergeShape(stencils[i]);
 		 } else {
@@ -1213,7 +1152,7 @@ Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
 /**Override delle funzioni per la modifica dei simboli*/
 
  Graph.prototype.isCellEditable = function(cell) {
-	 if(cell.style.includes('text') && this.isShapeMode()) {
+	 if((cell.style.includes('text') && this.isShapeMode()) || cell.isConstraint() ) {
 		 return true;
 	 } else {
 		 return false;
@@ -4821,7 +4760,7 @@ if (typeof mxVertexHandler != 'undefined')
 		/**
 		 * Contains the default style for edges.
 		 */
-		Graph.prototype.defaultEdgeStyle = {'edgeStyle': 'orthogonalEdgeStyle', 'rounded': '0',
+		Graph.prototype.defaultEdgeStyle = {'endArrow': 'orthogonalEdgeStyle', 'rounded': '0',
 			'jettySize': 'auto', 'orthogonalLoop': '1'};
 
 		/**

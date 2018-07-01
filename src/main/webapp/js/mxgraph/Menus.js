@@ -1075,11 +1075,35 @@ Menus.prototype.createPopupMenu = function(menu, cell, evt)
 				menu.addSeparator();
 				this.addMenuItems(menu, ['ungroup'], null, evt);
 			}
-			if(graph.getSelectionCount() > 1) {
+			if(graph.selectionContainsOnlyConstraints() && graph.selectionContainsOnlyEdges() ||
+			(graph.getSelectionCount()==1 && graph.getSelectionCell().isConstraint() && graph.getSelectionCell().style.includes('shape'))) {
 				menu.addSeparator();
-				this.addMenuItems(menu, ['merge'], null, evt);
+				var selectedCell = graph.getSelectionCell();
+
+				if(selectedCell.isAreaConstraint()) {
+					this.addMenuItems(menu, ['disableAreaConstraint'], null, evt);
+				} else {
+					this.addMenuItems(menu, ['areaConstraint'], null, evt);
+				}
+
+
 			}
-			if(graph.getSelectionCount()==1 && (graph.getSelectionCell().style.includes('stencil') || graph.getSelectionCell().style.includes('group'))) {
+			if(graph.getSelectionCount() > 1) {
+				var i;
+				var selectionContainsChildren = false;
+				var selection = graph.getSelectionCells();
+				for(i=0; i<selection.length; i++) {
+					if(selection[i].source!=null || selection[i].target!=null) {
+						selectionContainsChildren = true;
+						break;
+					}
+				}
+				if(!selectionContainsChildren) {
+					menu.addSeparator();
+					this.addMenuItems(menu, ['merge'], null, evt);
+				}
+			}
+			if(graph.getSelectionCount()==1 && (graph.getSelectionCell().style.includes('shape=') || graph.getSelectionCell().style.includes('group'))) {
 				menu.addSeparator();
 				this.addMenuItems(menu, ['unmerge'], null, evt);
 			}
