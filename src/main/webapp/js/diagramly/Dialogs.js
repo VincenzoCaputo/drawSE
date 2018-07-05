@@ -7786,7 +7786,15 @@ var LibraryDialog = function(editorUi, name, library, initialImages, file, mode)
 						{
 							var dlg = new FilenameDialog(editorUi, entry.title || '', mxResources.get('ok'), function(newTitle)
 							{
-								if (newTitle != null)
+								var i;
+								var res = false;
+								for(i=0; i<images.length; i++) {
+									if(images[i].title == newTitle) {
+										mxUtils.alert('This name is already used.');
+										res = true;
+									}
+								}
+								if (newTitle != null && !res)
 								{
 									entry.title = newTitle;
 									updateLabel();
