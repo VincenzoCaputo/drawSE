@@ -748,15 +748,11 @@
 	Sidebar.prototype.addNewPaletteButton = function() {
 		var editor = this.editorUi;
 		var addNewPaletteButton = mxUtils.button(mxResources.get('newPalette'), function(evt) {
-			var title = 'NewPalette';
-			//Controllo che non sia già esistente una palette con questo nome
-			if(localStorage.getItem(title)==null) {
-				var emptyXml = editor.emptyLibraryXml;
-				editor.loadLibrary(new StorageLibrary(editor, emptyXml, title));
-			} else {
-				//per testing
-				//localStorage.removeItem(title);
-			}
+			var title = 'NewPalette'+mxSettings.getCustomLibraries().length;
+
+			var emptyXml = editor.emptyLibraryXml;
+			editor.loadLibrary(new StorageLibrary(editor, emptyXml, title));
+
 		});
 		addNewPaletteButton.id = 'newPaletteButton';
 		addNewPaletteButton.style.display = ' block';
