@@ -985,8 +985,8 @@ mxUtils.extend(Graph, mxGraph);
 		 if(allCells.indexOf(cells[i]>=0)) {
 			 if(this.view.getState(cells[i])!=null) {
 				intersectCells.push(cells[i]);
-				intersectCells = intersectCells.concat(this.getCloseSymbols(cells[i], allCells, new Array()));
-				if(intersectCells.length>1) {
+				intersectCells = intersectCells.concat(this.getClosestCells(cells[i], allCells, new Array()));
+				if(intersectCells.length>1 || (intersectCells.length==1 && intersectCells[0].isOutlineConstraint())) {
 					var attr = shapeCreator.mergeShapes(intersectCells, false, false);
 					//Inserisco il nuovo simbolo creato
 					var groupProp = attr.shapeGeo;
@@ -1026,56 +1026,52 @@ mxUtils.extend(Graph, mxGraph);
 /**
 	Questa funzione, dato un simbolo, restituisce i simboli più vicini
 */
-Graph.prototype.getCloseSymbols = function(cellCompare, allCells, groupCells) {
-	delete allCells[allCells.indexOf(cellCompare)];
+Graph.prototype.getClosestCells = function(cellToCompare, cellList, cellGroup) {
+	delete cellList[cellList.indexOf(cellToCompare)];
 	var flagConstraint = false;
 	//Rendo il simbolo visible per poter leggere lo stato
-	if(cellCompare.isConstraint() && !cellCompare.visible) {
+	if(cellToCompare.isConstraint() && !cellToCompare.visible) {
 		flagConstraint = true;
-		cellCompare.visible = true;
+		cellToCompare.visible = true;
 		this.refresh();
 	}
-	var closestCells = this.getModel().filterDescendants(mxUtils.bind(this, function(cell) {
-		var returnValue = false;
-		var flag = false;
-		//Rendo il simbolo visible per poter leggere lo stato
-		if(cell.isConstraint() && !cell.visible) {
-			flag = true;
-			cell.visible = true;
-			this.refresh();
-		}
-
-		if((cell.vertex || cell.edge) && allCells.indexOf(cell)>=0) {
-			 var perimeter1 = this.view.getState(cell).getPerimeterBounds(5);
-			 var perimeter2 = this.view.getState(cellCompare).getPerimeterBounds(5);
+	var closestCells = new Array();
+	var i;
+	for(i=0; i<cellList.length; i++) {
+		if(cellList[i]!=null) {
+			var flag = false;
+			if(cellList[i].isConstraint() && !cellList[i].visible) {
+				flag = true;
+				cellList[i].visible = true;
+				this.refresh();
+			}
+			 var perimeter1 = this.view.getState(cellList[i]).getPerimeterBounds(5);
+			 var perimeter2 = this.view.getState(cellToCompare).getPerimeterBounds(5);
 			 if(mxUtils.intersects(perimeter1, perimeter2)) {
-				 delete allCells[allCells.indexOf(cell)];
-				 returnValue = true;
-			 } else {
-				 returnValue = false;
+				 closestCells.push(cellList[i]);
+				 delete cellList[i];
 			 }
+			if(flag && cellList[i]!=null) {
+				flag = false;
+				cellList[i].visible = false;
+				this.refresh();
+			}
 		}
-		if(flag) {
-			flag = false;
-			cell.visible = false;
-			this.refresh();
-		}
-		return returnValue;
-	}));
+	}
 	if(flagConstraint) {
 		flagConstraint = false;
-		cellCompare.visible = false;
+		cellToCompare.visible = false;
 		this.refresh();
 	}
 	var j;
 	var cs = new Array();
 	//Per ogni simbolo vicino, trovo ricorsivamente i simboli vicini
 	for(j=0; j<closestCells.length; j++) {
-		cs = cs.concat(this.getCloseSymbols(closestCells[j], allCells, groupCells));
+		cs = cs.concat(this.getClosestCells(closestCells[j], cellList, cellGroup));
 
 	}
-	groupCells = closestCells.concat(cs);
-	return groupCells;
+	cellGroup = closestCells.concat(cs);
+	return cellGroup;
 }
 
 

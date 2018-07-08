@@ -379,7 +379,7 @@ Actions.prototype.init = function()
 					cellsToTransform = cellsToTransform.concat(cells);
 				} else {
 					cellsToTransform.push(cellsToMerge[i]);
-					cellsToTransform = cellsToTransform.concat(graph.getCloseSymbols(cellsToMerge[i], constraintCells, new Array()));
+					cellsToTransform = cellsToTransform.concat(graph.getClosestCells(cellsToMerge[i], constraintCells, new Array()));
 				}
 
 			}

@@ -701,7 +701,7 @@
 					cell.connectable = false;
 					return this.createVertexTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Point');
 				})),
-				this.createEdgeTemplateEntry('endArrow=none;html=1;rounded=0;rotatable=0;resizable=0;fillColor=#d5e8d4;dashed=0;strokeColor=#80FF00;strokeWidth=2;opacity=70;dashed=0;', 50, 50, node, 'Attack Line', null, lineTags + 'simple undirected plain blank no'),
+				this.createEdgeTemplateEntry('endArrow=none;html=1;rounded=0;rotatable=0;resizable=0;fillColor=#d5e8d4;dashed=0;strokeColor=#80FF00;strokeWidth=2;opacity=70;dashed=0;', 50, 50, node, 'Attachment Line', null, lineTags + 'simple undirected plain blank no'),
 
 				this.addEntry('atckcurve', mxUtils.bind(this, function()
 				{
@@ -712,7 +712,7 @@
 					cell.geometry.relative = true;
 					cell.edge = true;
 
-						return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Attack Curve');
+						return this.createEdgeTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Attachment Curve');
 				})),
 				this.createVertexTemplateEntry('shape=mxgraph.general.rectangle;fillColor=#CDEB8B;strokeColor=#80FF00;dashed=0;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'SquareArea', null, null, 'SquareArea'),
 				this.createVertexTemplateEntry('shape=mxgraph.general.circle;fillColor=#CDEB8B;strokeColor=#80FF00;dashed=0;strokeWidth=2;opacity=70;', 100, 100, nodeArea, 'CircleArea', null, null, 'CircleArea'),
@@ -721,7 +721,7 @@
 
 			 ];
 
-			this.addPaletteFunctions('attack points', 'Attack points', (expand != null) ? expand : true, fns);
+			this.addPaletteFunctions('attack points', 'Attachment', (expand != null) ? expand : true, fns);
 			//Per rimpicciolire l'anteprima del punto
 			this.palettes['attack points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('rx',3);
 			this.palettes['attack points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('ry',3);
