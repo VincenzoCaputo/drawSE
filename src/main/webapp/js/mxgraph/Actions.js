@@ -323,10 +323,6 @@ Actions.prototype.init = function()
 			selectedCells[0].addAreaConstraint();
 			graph.refresh();
 		}
-		var selectedCell = graph.getSelectionCell();
-		var style = selectedCell.style;
-		style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);
-		graph.getModel().setStyle(selectedCell, style);
 		graph.refresh();
 	});
 	this.addAction('disableAreaConstraint', function() {
@@ -345,10 +341,6 @@ Actions.prototype.init = function()
 			} else {
 				selectedCells[0].removeAreaConstraint();
 			}
-			var selectedCell = graph.getSelectionCell();
-			var style = selectedCell.style;
-			style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);
-			graph.getModel().setStyle(selectedCell, style);
 			graph.refresh();
 	});
 	//Aggiungo action per la creazione di uno shape

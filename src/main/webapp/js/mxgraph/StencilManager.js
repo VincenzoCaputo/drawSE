@@ -1036,6 +1036,7 @@ StencilManager.prototype.getShapeFromXml = function(parentNode, shapeGeo, xmlSha
       cell.setGeometry(new mxGeometry(Number(node.getAttribute('x'))+shapeGeo.x, Number(node.getAttribute('y'))+shapeGeo.y, Number(node.getAttribute('w')), Number(node.getAttribute('h'))));
       cell.style = mxUtils.setStyle(cell.style, mxConstants.STYLE_SHAPE, node.getAttribute('name'));
       cell.vertex = true;
+      cell.connectable = false;
       childCells.push(cell);
       lastCells.push(cell);
     } else if(node.tagName == 'rect') {
