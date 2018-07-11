@@ -254,6 +254,7 @@ mxWebColaAdaptor.prototype.run = function()
   colaAdaptor.nodes(this.nodes)
              .links(this.links)
              .groups(this.groups)
+             .size(this.dimension)
              .linkDistance(function (link)
               {
                 return link.length;
@@ -314,7 +315,8 @@ mxWebColaAdaptor.prototype.graphToLayout = function(graph, movableVertices)
   var activeMaps = this.findActiveVertices(graph);  // list of all active vertices, i.e. with no collapsed parents
   var activeVertices = activeMaps.activeVertices;  // inactive vertex to its nearest active parent map
   var inactiveToActiveMap = activeMaps.inactiveToActiveMap;
-  var cells = graph.getModel().cells;
+  var model = graph.getModel();
+  var cells = model.cells;
   var view = graph.getView();
   
   // Ignores cells that have no states
@@ -343,6 +345,7 @@ mxWebColaAdaptor.prototype.graphToLayout = function(graph, movableVertices)
     var cell = cells[id];
     var state = view.getState(cell);
     var bounds = view.getBoundingBox(state, true);
+    var bounds = model.getGeometry(cell);
     var isFirst = true;
     // if (cell.isVertex() && this.isLeafOrCollapsed(cell)) {
     // only active vertices should be considered (i.e. not hidden by a collapsed or layouted vertex)
@@ -372,7 +375,7 @@ mxWebColaAdaptor.prototype.graphToLayout = function(graph, movableVertices)
   {
     var cell = cells[id];
     var state = view.getState(cell);
-    if (cell.isEdge())
+    if (cell.isEdge() && cell.getTerminal(true) != null && cell.getTerminal(false) != null)
     {
       // attach edges to lowest active vertex corresponding to each of their terminals
       var terminal_id1 = inactiveToActiveMap[cell.source.id];
@@ -492,8 +495,8 @@ mxWebColaAdaptor.prototype.createLink = function(sourceId, targetId, cellIds)
   var link = {};
   link.source = cellIds[sourceId];
   link.target = cellIds[targetId];
-  link.weight = 0.9;
-  link.length = 100; // TODO: replace with Graph.prototype.defaultEdgeLength; once integrated in draw.io
+  link.weight = 0.5;
+  link.length = Graph.prototype.defaultEdgeLength;
   return link;
 }
 
