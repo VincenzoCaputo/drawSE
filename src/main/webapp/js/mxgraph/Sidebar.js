@@ -2079,6 +2079,10 @@ Sidebar.prototype.createDropHandler = function(cells, allowSplit, allowCellsInse
 							graph.fireEvent(new mxEventObject('cellsInserted', 'cells', select));
 						}
 					}
+					catch (e)
+					{
+						this.editorUi.handleError(e);
+					}
 					finally
 					{
 						graph.model.endUpdate();
@@ -2233,6 +2237,10 @@ Sidebar.prototype.dropAndConnect = function(source, targets, direction, dropCell
 			}
 
 			graph.fireEvent(new mxEventObject('cellsInserted', 'cells', targets));
+		}
+		catch (e)
+		{
+			this.editorUi.handleError(e);
 		}
 		finally
 		{
