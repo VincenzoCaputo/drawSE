@@ -1125,32 +1125,22 @@ StencilManager.prototype.getShapeFromXml = function(parentNode, shapeGeo, xmlSha
             sourcePoint = prevPoint;
             controlPoint.push(point1);
           }
-          /*
-            Se il prossimo tag descrive una curva, allora il secondo punto del tag corrente (ossia currentPoint)
-            è un punto di controllo. Altrimenti il currentPoint è il punto terminale.
-          */
-          if(j<pathNodes.length-1 && pathNodes[j+1].tagName == 'quad') {
-            var xc = currentPoint.x * 2 - point1.x;
-            var yc = currentPoint.y * 2 - point1.y;
-            controlPoint.push(new mxPoint(xc, yc));
-          } else {
-            terminalPoint = new mxPoint(currentPoint.x, currentPoint.y);
-            isCurve = false;
-            var cell = new mxCell();
-            var newGeo = new mxGeometry();
-            newGeo.sourcePoint = sourcePoint;
-            newGeo.points = controlPoint;
-            newGeo.targetPoint = terminalPoint;
-            newGeo.width = 1;
-            newGeo.height = 1;
-            newGeo.relative = true;
-            cell.setGeometry(newGeo);
-            cell.style = 'endArrow=none;curved=1;';
-            cell.edge = true;
-            cell.vertex = true;
-            childCells.push(cell);
-            lastCells.push(cell);
-          }
+          terminalPoint = new mxPoint(currentPoint.x, currentPoint.y);
+          isCurve = false;
+          var cell = new mxCell();
+          var newGeo = new mxGeometry();
+          newGeo.sourcePoint = sourcePoint;
+          newGeo.points = controlPoint;
+          newGeo.targetPoint = terminalPoint;
+          newGeo.width = 1;
+          newGeo.height = 1;
+          newGeo.relative = true;
+          cell.setGeometry(newGeo);
+          cell.style = 'endArrow=none;curved=1;';
+          cell.edge = true;
+          cell.vertex = true;
+          childCells.push(cell);
+          lastCells.push(cell);
         } else if(pathNodes[j].tagName == 'curve') {
           var point1 = new mxPoint(Number(pathNodes[j].getAttribute('x1'))+shapeGeo.x, Number(pathNodes[j].getAttribute('y1'))+shapeGeo.y);
           var point2 = new mxPoint(Number(pathNodes[j].getAttribute('x2'))+shapeGeo.x, Number(pathNodes[j].getAttribute('y2'))+shapeGeo.y);
