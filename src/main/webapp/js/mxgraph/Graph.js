@@ -5910,7 +5910,7 @@ if (typeof mxVertexHandler != 'undefined')
 		Graph.prototype.addConstraintPoint = function (x, y) {
 			var point = new mxCell();
 			var doc = mxUtils.createXmlDocument();
-			var node = doc.createElement('AttackSymbol');
+			var node = doc.createElement('AttachmentSymbol');
 			node.setAttribute('isConstraint', 1);
 			node.setAttribute('label', '');
 

@@ -598,7 +598,7 @@ StencilManager.prototype.createPointConstraintNode = function(point, groupProp) 
 */
 StencilManager.prototype.createLineConstraintNode = function(line, groupProp) {
   var points = line.getAllPoints();
-  var lineAttackNode = this.xmlDoc.createDocumentFragment();
+  var attachmentlineNode = this.xmlDoc.createDocumentFragment();
   var constraintNodes = this.xmlDoc.createDocumentFragment();
 
   var linePoints = [];
@@ -657,11 +657,11 @@ StencilManager.prototype.createLineConstraintNode = function(line, groupProp) {
       }
     }
   }
-  var lineSpecNode = this.xmlDoc.createElement('lineattack');
+  var lineSpecNode = this.xmlDoc.createElement('attachmentline');
   lineSpecNode.setAttribute('x', this.graph.compress(JSON.stringify(linePoints)));
-  lineAttackNode.appendChild(lineSpecNode);
-  lineAttackNode.appendChild(constraintNodes);
-  return lineAttackNode;
+  attachmentlineNode.appendChild(lineSpecNode);
+  attachmentlineNode.appendChild(constraintNodes);
+  return attachmentlineNode;
 }
 
 /**
@@ -733,7 +733,7 @@ StencilManager.prototype.createCurveConstraintNode = function(curve, groupProp) 
     }
 
   }
-  var curveSpecNode = this.xmlDoc.createElement('curveattack');
+  var curveSpecNode = this.xmlDoc.createElement('attachmentcurve');
   curveSpecNode.setAttribute('x', this.graph.compress(JSON.stringify(relativeP)));
   curveLineNode.appendChild(curveSpecNode);
   curveLineNode.appendChild(constraintNodes);
@@ -758,14 +758,14 @@ StencilManager.prototype.createAreaConstraintNode = function(area, groupProp) {
   var areaWidth = area.getGeometry().width;
   var areaHeight = area.getGeometry().height;
   //Informazioni sull'area per l'unmerge
-  var areaAttackNode = this.xmlDoc.createElement('areaattack');
-  areaAttackNode.setAttribute('stencil', stencil);
-  areaAttackNode.setAttribute('x', 'P'+relX);
-  areaAttackNode.setAttribute('y', 'P'+relY);
-  areaAttackNode.setAttribute('w', areaWidth);
-  areaAttackNode.setAttribute('h', areaHeight);
-  areaAttackNode.setAttribute('area', 1);
-  constraintNode.appendChild(areaAttackNode);
+  var attachmentareaNode = this.xmlDoc.createElement('attachmentarea');
+  attachmentareaNode.setAttribute('stencil', stencil);
+  attachmentareaNode.setAttribute('x', 'P'+relX);
+  attachmentareaNode.setAttribute('y', 'P'+relY);
+  attachmentareaNode.setAttribute('w', areaWidth);
+  attachmentareaNode.setAttribute('h', areaHeight);
+  attachmentareaNode.setAttribute('area', 1);
+  constraintNode.appendChild(attachmentareaNode);
   var row;
   var col;
   for(row=0;row<=areaWidth;row=row+5) {
@@ -794,14 +794,14 @@ StencilManager.prototype.createStencilOutlineConstraintNode = function(shape, gr
     var x = geo.x-groupProp.x;
     var y = geo.y-groupProp.y;
 
-    var areaAttackNode = this.xmlDoc.createElement('areaattack');
-    areaAttackNode.setAttribute('stencil', this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE]);
-    areaAttackNode.setAttribute('x', 'P'+x);
-    areaAttackNode.setAttribute('y', 'P'+y);
-    areaAttackNode.setAttribute('w', geo.width);
-    areaAttackNode.setAttribute('h', geo.height);
-    areaAttackNode.setAttribute('area', '0');
-    constraintNodes.appendChild(areaAttackNode);
+    var attachmentareaNode = this.xmlDoc.createElement('attachmentarea');
+    attachmentareaNode.setAttribute('stencil', this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE]);
+    attachmentareaNode.setAttribute('x', 'P'+x);
+    attachmentareaNode.setAttribute('y', 'P'+y);
+    attachmentareaNode.setAttribute('w', geo.width);
+    attachmentareaNode.setAttribute('h', geo.height);
+    attachmentareaNode.setAttribute('area', '0');
+    constraintNodes.appendChild(attachmentareaNode);
     if(this.graph.getCellStyle(shape)[mxConstants.STYLE_SHAPE]=='mxgraph.general.rectangle') {
       var i;
       for(i=x; i<x+geo.width; i=i+2) {
@@ -900,7 +900,7 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
       var x = node.getAttribute('x')*xmlShapeGeo.width+geoCell.x-2.5;
       var y = node.getAttribute('y')*xmlShapeGeo.height+geoCell.y-2.5;
       var doc = mxUtils.createXmlDocument();
-      var nodeCell = doc.createElement('AttackSymbol');
+      var nodeCell = doc.createElement('AttachmentSymbol');
       if(node.getAttribute('name')!=null) {
         var name = node.getAttribute('name','');
         var match = name.match(/^P{1}[0123456789]*_/g);
@@ -918,7 +918,7 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
       cell.connectable = false;
       //cell.visible = false;
       cellsToAdd.push(cell);
-    } else if(node.tagName == 'lineattack' || node.tagName == 'curveattack') {
+    } else if(node.tagName == 'attachmentline' || node.tagName == 'attachmentcurve') {
       inArea = true;
       var points = JSON.parse(this.graph.decompress(node.getAttribute('x')));
 
@@ -932,7 +932,7 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
       }
       lineGeometry.targetPoint = new mxPoint(geoCell.x+points[j].x, geoCell.y+points[j].y);
       var doc = mxUtils.createXmlDocument();
-      var nodeCell = doc.createElement('AttackSymbol');
+      var nodeCell = doc.createElement('AttachmentSymbol');
       if(node.nextElementSibling.getAttribute('name')!=null) {
         var name = node.nextElementSibling.getAttribute('name','');
         var match = name.match(/^(L|C){1}[0123456789]*_/g);
@@ -946,7 +946,7 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
       }
 			nodeCell.setAttribute('isConstraint', 1);
       var style;
-      if(node.tagName == 'lineattack') {
+      if(node.tagName == 'attachmentline') {
         style = 'endArrow=none;html=1;rounded=0;rotatable=0;resizable=0;fillColor=#d5e8d4;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
       } else {
         style = 'curved=1;endArrow=none;html=1;rotatable=0;resizable=0;fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
@@ -956,7 +956,7 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
       cell.connectable = false;
       //cell.visible = false;
       cellsToAdd.push(cell);
-    } else if(node.tagName == 'areaattack') {
+    } else if(node.tagName == 'attachmentarea') {
       inArea = true;
       var stencil = node.getAttribute('stencil');
       var sourcePoint_x = geoCell.x+Number(node.getAttribute('x').substring(1));
@@ -965,7 +965,7 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
       var dimension_h = Number(node.getAttribute('h'));
       var areaGeometry = new mxGeometry(sourcePoint_x, sourcePoint_y, dimension_w, dimension_h);
       var doc = mxUtils.createXmlDocument();
-      var nodeCell = doc.createElement('AttackSymbol');
+      var nodeCell = doc.createElement('AttachmentSymbol');
       if(node.nextElementSibling.getAttribute('name')!=null) {
         var name = node.nextElementSibling.getAttribute('name','');
         var match = name.match(/^A{1}[0123456789]*_/g);

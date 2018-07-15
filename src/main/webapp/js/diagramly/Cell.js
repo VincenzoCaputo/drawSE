@@ -29,7 +29,7 @@ mxCell.prototype.isConstraint = function() {
 
 mxCell.prototype.setConstraint = function() {
   if(this.getValue()=='' || this.getValue()==null) {
-    var node = this.createAttackSymbolXmlNode();
+    var node = this.createAttachmentSymbolXmlNode();
     node.setAttribute('isConstraint', 1);
     this.setValue(node);
   } else {
@@ -157,9 +157,9 @@ mxCell.prototype.setOutlineConstraintColor = function(fillColor) {
   this.outlineConstraintColor = fillColor;
 }
 
-mxCell.prototype.createAttackSymbolXmlNode = function() {
+mxCell.prototype.createAttachmentSymbolXmlNode = function() {
   var doc = mxUtils.createXmlDocument();
-  var node = doc.createElement('AttackSymbol');
+  var node = doc.createElement('AttachmentSymbol');
   node.setAttribute('label', '');
   return node;
 }

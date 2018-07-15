@@ -661,14 +661,14 @@
 			for(pal in this.palettes) {
 				this.showPalette(pal, false);
 			}
-			this.addAttackPointsPalette(true);
+			this.addAttachmentPointsPalette(true);
 			document.getElementById('newPaletteButton').style.display = 'none';
 		} else if(graph.isShapeMode()) {
 			var pal;
 			for(pal in this.palettes) {
 				this.showPalette(pal, true);
 			}
-			this.showPalette('attack points', false);
+			this.showPalette('attachment points', false);
 			document.getElementById('newPaletteButton').style.display = 'block';
 		}
 	}
@@ -676,19 +676,19 @@
 	/**
   * Aggiunge la palette con i punti di attacco (punto, linea e linea curva)
 	*/
-	Sidebar.prototype.addAttackPointsPalette = function(expand) {
-			var lineTags = 'points attack connections ';
+	Sidebar.prototype.addAttachmentPointsPalette = function(expand) {
+			var lineTags = 'points attachment connections ';
 			//Aggiungo un attributo per riconoscere questi simboli come punti di attacco
 			var doc = mxUtils.createXmlDocument();
-		  var node = doc.createElement('AttackSymbol');
+		  var node = doc.createElement('AttachmentSymbol');
 		  node.setAttribute('label', '');
 			node.setAttribute('isConstraint', 1);
-			var nodeArea = doc.createElement('AttackSymbol');
+			var nodeArea = doc.createElement('AttachmentSymbol');
 		  nodeArea.setAttribute('label', '');
 			nodeArea.setAttribute('isConstraint', 1);
 			nodeArea.setAttribute('areaConstraint',1);
 			nodeArea.setAttribute('outlineConstraint',1);
-			var nodeOutline = doc.createElement('AttackSymbol');
+			var nodeOutline = doc.createElement('AttachmentSymbol');
 			nodeOutline.setAttribute('label', '');
 			nodeOutline.setAttribute('isConstraint', 1);
 			nodeOutline.setAttribute('areaConstraint',0);
@@ -721,10 +721,10 @@
 
 			 ];
 
-			this.addPaletteFunctions('attack points', 'Attachment', (expand != null) ? expand : true, fns);
+			this.addPaletteFunctions('attachment points', 'Attachment', (expand != null) ? expand : true, fns);
 			//Per rimpicciolire l'anteprima del punto
-			this.palettes['attack points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('rx',3);
-			this.palettes['attack points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('ry',3);
+			this.palettes['attachment points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('rx',3);
+			this.palettes['attachment points'][1].getElementsByTagName('a')[0].getElementsByTagName('ellipse')[0].setAttribute('ry',3);
 		}
 
 	/**
