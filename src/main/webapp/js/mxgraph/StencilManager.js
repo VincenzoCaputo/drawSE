@@ -981,6 +981,7 @@ StencilManager.prototype.unmergeShape = function(cellToTransform) {
       var style = '';
       if(Number(node.getAttribute('area'))==1) {
         nodeCell.setAttribute('areaConstraint', 1);
+        nodeCell.setAttribute('outlineConstraint',1);
         style = 'shape='+stencil+';fillColor=#CDEB8B;strokeColor=#80FF00;strokeWidth=2;opacity=70;';
       } else {
         nodeCell.setAttribute('areaConstraint', 0);
