@@ -691,7 +691,7 @@ Toolbar.prototype.hideMenu = function()
 /**
  * Adds a label to the toolbar.
  */
-Toolbar.prototype.addMenu = function(label, tooltip, showLabels, name, c, showAll)
+Toolbar.prototype.addMenu = function(label, tooltip, showLabels, name, c, showAll, ignoreState)
 {
 	var menu = this.editorUi.menus.get(name);
 	var elt = this.addMenuFunction(label, tooltip, showLabels, function()
@@ -699,10 +699,13 @@ Toolbar.prototype.addMenu = function(label, tooltip, showLabels, name, c, showAl
 		menu.funct.apply(menu, arguments);
 	}, c, showAll);
 
-	menu.addListener('stateChanged', function()
+	if (!ignoreState)
 	{
-		elt.setEnabled(menu.enabled);
-	});
+		menu.addListener('stateChanged', function()
+		{
+			elt.setEnabled(menu.enabled);
+		});
+	}
 
 	return elt;
 };

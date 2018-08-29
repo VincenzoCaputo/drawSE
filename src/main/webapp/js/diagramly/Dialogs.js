@@ -624,7 +624,7 @@ var SplashDialog = function(editorUi)
 
 			var link = document.createElement('a');
 			link.setAttribute('href', 'javascript:void(0)');
-			link.style.display = 'block';
+			link.style.display = 'inline-block';
 			link.style.marginTop = '6px';
 			mxUtils.write(link, mxResources.get('signOut'));
 
@@ -649,7 +649,7 @@ var SplashDialog = function(editorUi)
 
 			var link = document.createElement('a');
 			link.setAttribute('href', 'javascript:void(0)');
-			link.style.display = 'block';
+			link.style.display = 'inline-block';
 			link.style.marginTop = '6px';
 			mxUtils.write(link, mxResources.get('changeUser') + ' (' + driveUser.displayName + ')');
 
@@ -721,9 +721,10 @@ var SplashDialog = function(editorUi)
 			});
 		}
 
+		mxUtils.br(buttons);
 		var link = document.createElement('a');
 		link.setAttribute('href', 'javascript:void(0)');
-		link.style.display = 'block';
+		link.style.display = 'inline-block';
 		link.style.marginTop = '8px';
 		mxUtils.write(link, mxResources.get('notUsingService', [storage]));
 
@@ -848,111 +849,6 @@ var ConfirmDialog = function(editorUi, message, okFn, cancelFn, okLabel, cancelL
 	{
 		btns.style.marginTop = '16px';
 	}
-
-	this.container = div;
-};
-
-/**
- *
- */
-var ErrorDialog = function(editorUi, title, message, buttonText, fn, retry, buttonText2, fn2, hide, buttonText3, fn3)
-{
-	hide = (hide != null) ? hide : true;
-
-	var div = document.createElement('div');
-	div.style.textAlign = 'center';
-
-	if (title != null)
-	{
-		var hd = document.createElement('div');
-		hd.style.padding = '0px';
-		hd.style.margin = '0px';
-		hd.style.fontSize = '18px';
-		hd.style.paddingBottom = '16px';
-		hd.style.marginBottom = '16px';
-		hd.style.borderBottom = '1px solid #c0c0c0';
-		hd.style.color = 'gray';
-		mxUtils.write(hd, title);
-		div.appendChild(hd);
-	}
-
-	var p2 = document.createElement('div');
-	p2.style.padding = '6px';
-	p2.innerHTML = message;
-	div.appendChild(p2);
-
-	var btns = document.createElement('div');
-	btns.style.marginTop = '16px';
-	btns.style.textAlign = 'center';
-
-	if (retry != null)
-	{
-		var retryBtn = mxUtils.button(mxResources.get('tryAgain'), function()
-		{
-			editorUi.hideDialog();
-			retry();
-		});
-		retryBtn.className = 'geBtn';
-		btns.appendChild(retryBtn);
-
-		btns.style.textAlign = 'center';
-	}
-
-	if (buttonText3 != null)
-	{
-		var btn3 = mxUtils.button(buttonText3, function()
-		{
-			if (fn3 != null)
-			{
-				fn3();
-			}
-		});
-
-		btn3.className = 'geBtn';
-		btns.appendChild(btn3);
-	}
-
-	var btn = mxUtils.button(buttonText, function()
-	{
-		if (hide)
-		{
-			editorUi.hideDialog();
-		}
-
-		if (fn != null)
-		{
-			fn();
-		}
-	});
-
-	btn.className = 'geBtn';
-	btns.appendChild(btn);
-
-	if (buttonText2 != null)
-	{
-		var mainBtn = mxUtils.button(buttonText2, function()
-		{
-			if (hide)
-			{
-				editorUi.hideDialog();
-			}
-
-			if (fn2 != null)
-			{
-				fn2();
-			}
-		});
-
-		mainBtn.className = 'geBtn gePrimaryBtn';
-		btns.appendChild(mainBtn);
-	}
-
-	this.init = function()
-	{
-		btn.focus();
-	};
-
-	div.appendChild(btns);
 
 	this.container = div;
 };
@@ -2117,170 +2013,183 @@ var ParseDialog = function(editorUi, title, defaultType)
 		{
 			var plantUmlServerUrl = (type == 'plantUmlTxt') ? PLANT_URL + '/txt/' :
 				((type == 'plantUmlPng') ? PLANT_URL + '/png/' : PLANT_URL + '/svg/');
-	    	var graph = editorUi.editor.graph;
+			var graph = editorUi.editor.graph;
 
-	    	// TODO: Change server to return base64 & accept POST request
-	    	if (editorUi.spinner.spin(document.body, mxResources.get('inserting')))
-	    	{
-    			function encode64(data) {
-				r = "";
-				for (i=0; i<data.length; i+=3) {
-			 		if (i+2==data.length) {
-						r +=append3bytes(data.charCodeAt(i), data.charCodeAt(i+1), 0);
-					} else if (i+1==data.length) {
-						r += append3bytes(data.charCodeAt(i), 0, 0);
-					} else {
-						r += append3bytes(data.charCodeAt(i), data.charCodeAt(i+1),
-							data.charCodeAt(i+2));
-					}
-				}
-				return r;
-			}
-
-			function append3bytes(b1, b2, b3)
+			// TODO: Change server to return base64 and accept POST request
+			if (editorUi.spinner.spin(document.body, mxResources.get('inserting')))
 			{
-				c1 = b1 >> 2;
-				c2 = ((b1 & 0x3) << 4) | (b2 >> 4);
-				c3 = ((b2 & 0xF) << 2) | (b3 >> 6);
-				c4 = b3 & 0x3F;
-				r = "";
-				r += encode6bit(c1 & 0x3F);
-				r += encode6bit(c2 & 0x3F);
-				r += encode6bit(c3 & 0x3F);
-				r += encode6bit(c4 & 0x3F);
-				return r;
-			}
-
-			function encode6bit(b)
-			{
-				if (b < 10) {
-			 		return String.fromCharCode(48 + b);
-				}
-				b -= 10;
-				if (b < 26) {
-			 		return String.fromCharCode(65 + b);
-				}
-				b -= 26;
-				if (b < 26) {
-			 		return String.fromCharCode(97 + b);
-				}
-				b -= 26;
-				if (b == 0) {
-			 		return '-';
-				}
-				if (b == 1) {
-			 		return '_';
-				}
-				return '?';
-			}
-
-			// TODO: Remove unescape, use btoa for compatibility with graph.compress
-			function compress(s)
-			{
-				return encode64(graph.bytesToString(pako.deflateRaw(unescape(encodeURIComponent(s)))));
-			};
-
-			var xhr = new XMLHttpRequest();
-			xhr.open('GET', plantUmlServerUrl + compress(text), true);
-
-			if (type != 'plantUmlTxt')
-			{
-				xhr.responseType = 'blob';
-			}
-
-			xhr.onload = function(e)
-			{
-			  if (this.status >= 200 && this.status < 300)
-			  {
-				if (type == 'plantUmlTxt')
+				function encode64(data)
 				{
-					editorUi.spinner.stop();
+					r = "";
 
-		    			graph.getModel().beginUpdate();
-					try
+					for (i = 0; i < data.length; i += 3)
 					{
-			    			cell = graph.insertVertex(null, null, '<pre>' + this.response + '</pre>',
-			    				insertPoint.x, insertPoint.y, 1, 1, 'text;html=1;overflow=fill;');
-			    			graph.updateCellSize(cell, true);
-					}
-					finally
-					{
-						graph.getModel().endUpdate();
+						if (i + 2 == data.length)
+						{
+							r += append3bytes(data.charCodeAt(i), data.charCodeAt(i + 1), 0);
+						}
+						else if (i + 1 == data.length)
+						{
+							r += append3bytes(data.charCodeAt(i), 0, 0);
+						}
+						else
+						{
+							r += append3bytes(data.charCodeAt(i), data.charCodeAt(i + 1),
+								data.charCodeAt(i + 2));
+						}
 					}
 
-					graph.setSelectionCell(cell);
-		           	graph.scrollCellToVisible(graph.getSelectionCell());
+					return r;
 				}
-				else
+
+				function append3bytes(b1, b2, b3)
 				{
-				    var reader = new FileReader();
-				    reader.readAsDataURL(this.response);
+					c1 = b1 >> 2;
+					c2 = ((b1 & 0x3) << 4) | (b2 >> 4);
+					c3 = ((b2 & 0xF) << 2) | (b3 >> 6);
+					c4 = b3 & 0x3F;
+					r = "";
+					r += encode6bit(c1 & 0x3F);
+					r += encode6bit(c2 & 0x3F);
+					r += encode6bit(c3 & 0x3F);
+					r += encode6bit(c4 & 0x3F);
 
-				    reader.onload = function(e)
-				    {
-					    	var img = new Image();
-
-					    	img.onload = function()
-					    	{
-					    		editorUi.spinner.stop();
-					    		var w = img.width;
-					    		var h = img.height;
-
-					    		// Workaround for 0 image size in IE11
-					    		if (w == 0 && h == 0)
-					    		{
-						    		var data = e.target.result;
-						    		var comma = data.indexOf(',');
-			    					var svgText = decodeURIComponent(escape(atob(data.substring(comma + 1))));
-			    					var root = mxUtils.parseXml(svgText);
-		    						var svgs = root.getElementsByTagName('svg');
-
-		    						if (svgs.length > 0)
-		    						{
-		    							w = parseFloat(svgs[0].getAttribute('width'));
-		    							h = parseFloat(svgs[0].getAttribute('height'));
-		    						}
-					    		}
-
-					    		graph.getModel().beginUpdate();
-							try
-							{
-					    			cell = graph.insertVertex(null, null, text, insertPoint.x, insertPoint.y,
-									w, h, 'shape=image;noLabel=1;verticalAlign=top;aspect=fixed;imageAspect=0;' +
-									'image=' + editorUi.convertDataUri(e.target.result) + ';');
-							}
-							finally
-							{
-								graph.getModel().endUpdate();
-							}
-
-							graph.setSelectionCell(cell);
-				           	graph.scrollCellToVisible(graph.getSelectionCell());
-					    	};
-
-					    	img.src = e.target.result;
-				    };
-
-				    reader.onerror = function(e)
-				    {
-				    		editorUi.handleError(e);
-				    };
+					return r;
 				}
-			  }
-			  else
-			  {
-				  editorUi.spinner.stop();
-				  editorUi.handleError(e);
-			  }
-			};
 
-			xhr.onerror = function(e)
-			{
-				editorUi.handleError(e);
-			};
+				function encode6bit(b)
+				{
+					if (b < 10)
+					{
+						return String.fromCharCode(48 + b);
+					}
 
-			xhr.send();
-    	  }
+					b -= 10;
+
+					if (b < 26)
+					{
+						return String.fromCharCode(65 + b);
+					}
+
+					b -= 26;
+
+					if (b < 26)
+					{
+						return String.fromCharCode(97 + b);
+					}
+
+					b -= 26;
+
+					if (b == 0)
+					{
+						return '-';
+					}
+
+					if (b == 1)
+					{
+						return '_';
+					}
+
+					return '?';
+				}
+
+				// TODO: Remove unescape, use btoa for compatibility with graph.compress
+				function compress(s)
+				{
+					return encode64(graph.bytesToString(
+						pako.deflateRaw(unescape(
+						encodeURIComponent(s)))));
+				};
+
+				var xhr = new XMLHttpRequest();
+				xhr.open('GET', plantUmlServerUrl + compress(text), true);
+
+				if (type != 'plantUmlTxt')
+				{
+					xhr.responseType = 'blob';
+				}
+
+				xhr.onload = function(e)
+				{
+					if (this.status >= 200 && this.status < 300)
+					{
+						if (type == 'plantUmlTxt')
+						{
+							editorUi.spinner.stop();
+							graph.setSelectionCell(editorUi.insertAsPreText(
+								this.response, insertPoint.x, insertPoint.y));
+							graph.scrollCellToVisible(graph.getSelectionCell());
+						}
+						else
+						{
+							var reader = new FileReader();
+							reader.readAsDataURL(this.response);
+
+							reader.onloadend = function(e)
+							{
+								var img = new Image();
+
+								img.onload = function()
+								{
+									editorUi.spinner.stop();
+									var w = img.width;
+									var h = img.height;
+
+									// Workaround for 0 image size in IE11
+									if (w == 0 && h == 0)
+									{
+										var data = reader.result;
+										var comma = data.indexOf(',');
+										var svgText = decodeURIComponent(escape(atob(data.substring(comma + 1))));
+										var root = mxUtils.parseXml(svgText);
+										var svgs = root.getElementsByTagName('svg');
+
+										if (svgs.length > 0)
+										{
+											w = parseFloat(svgs[0].getAttribute('width'));
+											h = parseFloat(svgs[0].getAttribute('height'));
+										}
+									}
+
+									graph.getModel().beginUpdate();
+									try
+									{
+										cell = graph.insertVertex(null, null, text, insertPoint.x, insertPoint.y,
+											w, h, 'shape=image;noLabel=1;verticalAlign=top;aspect=fixed;imageAspect=0;' +
+											'image=' + editorUi.convertDataUri(reader.result) + ';');
+									}
+									finally
+									{
+										graph.getModel().endUpdate();
+									}
+
+									graph.setSelectionCell(cell);
+									graph.scrollCellToVisible(graph.getSelectionCell());
+								};
+
+								img.src = reader.result;
+							};
+
+							reader.onerror = function(e)
+							{
+								editorUi.handleError(e);
+							};
+						}
+					}
+					else
+					{
+						editorUi.spinner.stop();
+						editorUi.handleError(e);
+					}
+				};
+
+				xhr.onerror = function(e)
+				{
+					editorUi.handleError(e);
+				};
+
+				xhr.send();
+			}
 		}
 		else if (type == 'table')
 		{
@@ -3063,18 +2972,16 @@ var NewDialog = function(editorUi, compact, showName, callback, createOnly, canc
 
 			if (title != null && title.length > 0)
 			{
-				var tempMode = (editorUi.mode == App.MODE_ONEDRIVE || editorUi.mode == App.MODE_TRELLO ||
-					(editorUi.mode == App.MODE_GOOGLE && (editorUi.stateArg == null ||
-					editorUi.stateArg.folderId == null))) ? editorUi.mode : null;
-
-				editorUi.pickFolder(tempMode, function(folderId)
+				editorUi.pickFolder(editorUi.mode, function(folderId)
 				{
 					editorUi.createFile(title, templateXml, (templateLibs != null &&
 						templateLibs.length > 0) ? templateLibs : null, null, function()
 					{
 						editorUi.hideDialog();
 					}, null, folderId);
-				});
+				}, editorUi.mode != App.MODE_GOOGLE ||
+					editorUi.stateArg == null ||
+					editorUi.stateArg.folderId == null);
 			}
 		}
 	};
@@ -3961,7 +3868,7 @@ var PopupDialog = function(editorUi, url, pre, fallback, hideDialog)
 			pre();
 		}
 
-		editorUi.openLink(url);
+		editorUi.openLink(url, null, true);
 	});
 	wndBtn.className = 'geBtn gePrimaryBtn';
 	wndBtn.style.width = replaceBtn.style.width;
@@ -7237,18 +7144,39 @@ var EditGeometryDialog = function(editorUi, vertices)
 	var right = document.createElement('td');
 	table.style.paddingLeft = '6px';
 
+	mxUtils.write(left, mxResources.get('relative') + ':');
+
+	var relInput = document.createElement('input');
+	relInput.setAttribute('type', 'checkbox');
+
+	if (geo != null && geo.relative)
+	{
+		relInput.setAttribute('checked', 'checked');
+		relInput.defaultChecked = true;
+	}
+
+	this.init = function()
+	{
+		relInput.focus();
+	};
+
+	right.appendChild(relInput);
+
+	row.appendChild(left);
+	row.appendChild(right);
+
+	tbody.appendChild(row);
+
+	row = document.createElement('tr');
+	left = document.createElement('td');
+	right = document.createElement('td');
+
 	mxUtils.write(left, mxResources.get('left') + ':');
 
 	var xInput = document.createElement('input');
 	xInput.setAttribute('type', 'text');
 	xInput.style.width = '100px';
 	xInput.value = (geo != null) ? geo.x : '';
-
-	this.init = function()
-	{
-		xInput.focus();
-		xInput.select();
-	};
 
 	right.appendChild(xInput);
 
@@ -7269,6 +7197,42 @@ var EditGeometryDialog = function(editorUi, vertices)
 	yInput.value = (geo != null) ? geo.y : '';
 
 	right.appendChild(yInput);
+
+	row.appendChild(left);
+	row.appendChild(right);
+
+	tbody.appendChild(row);
+
+	row = document.createElement('tr');
+	left = document.createElement('td');
+	right = document.createElement('td');
+
+	mxUtils.write(left, mxResources.get('dx') + ':');
+
+	var dxInput = document.createElement('input');
+	dxInput.setAttribute('type', 'text');
+	dxInput.style.width = '100px';
+	dxInput.value = (geo != null && geo.offset != null) ? geo.offset.x : '';
+
+	right.appendChild(dxInput);
+
+	row.appendChild(left);
+	row.appendChild(right);
+
+	tbody.appendChild(row);
+
+	row = document.createElement('tr');
+	left = document.createElement('td');
+	right = document.createElement('td');
+
+	mxUtils.write(left, mxResources.get('dy') + ':');
+
+	var dyInput = document.createElement('input');
+	dyInput.setAttribute('type', 'text');
+	dyInput.style.width = '100px';
+	dyInput.value = (geo != null && geo.offset != null) ? geo.offset.y : '';
+
+	right.appendChild(dyInput);
 
 	row.appendChild(left);
 	row.appendChild(right);
@@ -7338,6 +7302,8 @@ var EditGeometryDialog = function(editorUi, vertices)
 		editorUi.hideDialog();
 	});
 
+	cancelBtn.className = 'geBtn';
+
 	var applyBtn = mxUtils.button(mxResources.get('apply'), function()
 	{
 		editorUi.hideDialog();
@@ -7355,6 +7321,8 @@ var EditGeometryDialog = function(editorUi, vertices)
 
 					if (graph.isCellMovable(vertices[i]))
 					{
+						g.relative = relInput.checked;
+
 						if (mxUtils.trim(xInput.value).length > 0)
 						{
 							g.x = Number(xInput.value);
@@ -7363,6 +7331,26 @@ var EditGeometryDialog = function(editorUi, vertices)
 						if (mxUtils.trim(yInput.value).length > 0)
 						{
 							g.y = Number(yInput.value);
+						}
+
+						if (mxUtils.trim(dxInput.value).length > 0)
+						{
+							if (g.offset == null)
+							{
+								g.offset = new mxPoint();
+							}
+
+							g.offset.x = Number(dxInput.value);
+						}
+
+						if (mxUtils.trim(dyInput.value).length > 0)
+						{
+							if (g.offset == null)
+							{
+								g.offset = new mxPoint();
+							}
+
+							g.offset.y = Number(dyInput.value);
 						}
 					}
 
@@ -7393,6 +7381,8 @@ var EditGeometryDialog = function(editorUi, vertices)
 			graph.getModel().endUpdate();
 		}
 	});
+
+	applyBtn.className = 'geBtn gePrimaryBtn';
 
 	mxEvent.addListener(div, 'keypress', function(e)
 	{

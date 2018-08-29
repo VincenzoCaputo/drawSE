@@ -1859,7 +1859,7 @@ Graph.prototype.labelLinkClicked = function(state, elt, evt)
 /**
  * Returns the size of the page format scaled with the page size.
  */
-Graph.prototype.openLink = function(href, target)
+Graph.prototype.openLink = function(href, target, allowOpener)
 {
 	var result = window;
 
@@ -1888,6 +1888,11 @@ Graph.prototype.openLink = function(href, target)
 		else
 		{
 			result = window.open(href, target);
+
+			if (result != null && !allowOpener)
+			{
+				result.opener = null;
+			}
 		}
 	}
 
@@ -1915,8 +1920,7 @@ Graph.prototype.isCustomLink = function(href)
  */
 Graph.prototype.customLinkClicked = function(link)
 {
-	console.log('customLinkClicked not implemented');
-	// Hook for subclassers
+	return false;
 };
 
 /**
@@ -2781,7 +2785,7 @@ Graph.prototype.convertValueToString = function(cell)
 		}
 		else
 		{
-			return cell.value.getAttribute('label');
+			return cell.value.getAttribute('label') || '';
 		}
 	}
 
@@ -3569,10 +3573,12 @@ HoverIcons.prototype.init = function()
 	    	}
 	    	else if (!this.graph.isMouseDown && !mxEvent.isTouchEvent(evt))
 	    	{
-	    		this.update(this.getState(me.getState()), me.getGraphX(), me.getGraphY());
+	    		this.update(this.getState(me.getState()),
+	    			me.getGraphX(), me.getGraphY());
 	    	}
 
-	    	if (this.graph.connectionHandler != null && this.graph.connectionHandler.shape != null)
+	    	if (this.graph.connectionHandler != null &&
+	    		this.graph.connectionHandler.shape != null)
 	    	{
 	    		connectionHandlerActive = true;
 	    	}
@@ -3580,34 +3586,34 @@ HoverIcons.prototype.init = function()
 	    mouseUp: mxUtils.bind(this, function(sender, me)
 	    {
 	    	var evt = me.getEvent();
+	    	var pt = mxUtils.convertPoint(this.graph.container,
+				mxEvent.getClientX(evt), mxEvent.getClientY(evt))
 
 	    	if (this.isResetEvent(evt))
 	    	{
 	    		this.reset();
 	    	}
-	    	else if (this.isActive() && this.mouseDownPoint != null &&
-	    		Math.abs(me.getGraphX() - this.mouseDownPoint.x) < this.graph.tolerance &&
-		    	Math.abs(me.getGraphY() - this.mouseDownPoint.y) < this.graph.tolerance)
+	    	else if (this.isActive() && !connectionHandlerActive &&
+	    		this.mouseDownPoint != null)
 	    	{
-	    		// Executes click event on highlighted arrow
-	    		if (!connectionHandlerActive)
-	    		{
-	    			this.click(this.currentState, this.getDirection(), me);
-	    		}
+    			this.click(this.currentState, this.getDirection(), me);
 	    	}
 	    	else if (this.isActive())
 	    	{
 	    		// Selects target vertex after drag and clone if not only new edge was inserted
-	    		if (this.graph.getSelectionCount() != 1 || !this.graph.model.isEdge(this.graph.getSelectionCell()))
+	    		if (this.graph.getSelectionCount() != 1 || !this.graph.model.isEdge(
+	    			this.graph.getSelectionCell()))
 	    		{
-	    			this.update(this.getState(this.graph.view.getState(this.graph.getCellAt(me.getGraphX(), me.getGraphY()))));
+	    			this.update(this.getState(this.graph.view.getState(
+	    				this.graph.getCellAt(me.getGraphX(), me.getGraphY()))));
 	    		}
 	    		else
 	    		{
 	    			this.reset();
 	    		}
 	    	}
-	    	else if (mxEvent.isTouchEvent(evt) || (this.bbox != null && mxUtils.contains(this.bbox, me.getGraphX(), me.getGraphY())))
+	    	else if (mxEvent.isTouchEvent(evt) || (this.bbox != null &&
+	    		mxUtils.contains(this.bbox, me.getGraphX(), me.getGraphY())))
 	    	{
 	    		// Shows existing hover icons if inside bounding box
 	    		this.setDisplay('');
@@ -5519,6 +5525,29 @@ if (typeof mxVertexHandler != 'undefined')
 		};
 
 		/**
+		 * Returns true if the given stencil contains any placeholder text.
+		 */
+		Graph.prototype.stencilHasPlaceholders = function(stencil)
+		{
+			if (stencil != null && stencil.fgNode != null)
+			{
+				var node = stencil.fgNode.firstChild;
+
+				while (node != null)
+				{
+					if (node.nodeName == 'text' && node.getAttribute('placeholders') == '1')
+					{
+						return true;
+					}
+
+					node = node.nextSibling;
+				}
+			}
+
+			return false;
+		};
+
+		/**
 		 * Updates the child cells with placeholders if metadata of a cell has changed.
 		 */
 		Graph.prototype.processChange = function(change)
@@ -5536,7 +5565,14 @@ if (typeof mxVertexHandler != 'undefined')
 				{
 					for (var i = 0; i < desc.length; i++)
 					{
-						if (this.isReplacePlaceholders(desc[i]))
+						var state = this.view.getState(desc[i]);
+
+						if (state != null && state.shape != null && state.shape.stencil != null &&
+							this.stencilHasPlaceholders(state.shape.stencil))
+						{
+							this.removeStateForCell(desc[i]);
+						}
+						else if (this.isReplacePlaceholders(desc[i]))
 						{
 							this.view.invalidate(desc[i], false, false);
 						}
@@ -6044,6 +6080,7 @@ if (typeof mxVertexHandler != 'undefined')
 
 						if (href != null)
 						{
+							links[i].setAttribute('rel', 'nofollow noopener noreferrer');
 							links[i].setAttribute('href', href);
 
 							if (beforeClick != null)
@@ -6354,6 +6391,52 @@ if (typeof mxVertexHandler != 'undefined')
 			if (value.length == 0)
 			{
 				document.execCommand('unlink', false);
+			}
+			else if (mxClient.IS_FF)
+			{
+				// Workaround for Firefox that adds a new link and removes
+				// the href from the inner link if its parent is a span is
+				// to remove all inner links inside the new outer link
+				var tmp = this.cellEditor.textarea.getElementsByTagName('a');
+				var oldLinks = [];
+
+				for (var i = 0; i < tmp.length; i++)
+				{
+					oldLinks.push(tmp[i]);
+				}
+
+				document.execCommand('createlink', false, mxUtils.trim(value));
+
+				// Finds the new link element
+				var newLinks = this.cellEditor.textarea.getElementsByTagName('a');
+
+				if (newLinks.length == oldLinks.length + 1)
+				{
+					// Inverse order in favor of appended links
+					for (var i = newLinks.length - 1; i >= 0; i--)
+					{
+						if (newLinks[i] != oldLinks[i - 1])
+						{
+							// Removes all inner links from the new link and
+							// moves the children to the inner link parent
+							var tmp = newLinks[i].getElementsByTagName('a');
+
+							while (tmp.length > 0)
+							{
+								var parent = tmp[0].parentNode;
+
+								while (tmp[0].firstChild != null)
+								{
+									parent.insertBefore(tmp[0].firstChild, tmp[0]);
+								}
+
+								parent.removeChild(tmp[0]);
+							}
+
+							break;
+						}
+					}
+				}
 			}
 			else
 			{
@@ -6969,15 +7052,37 @@ if (typeof mxVertexHandler != 'undefined')
 		 */
 		Graph.prototype.createLinkForHint = function(link, label)
 		{
-			label = (label != null) ? label : link;
+			link = (link != null) ? link : 'javascript:void(0);';
+
+			if (label == null || label.length == 0)
+			{
+				if (this.isCustomLink(link))
+				{
+					label = this.getLinkTitle(link);
+				}
+				else
+				{
+					label = link;
+				}
+			}
+
+			// Helper function to shorten strings
+			function short(str, max)
+			{
+				if (str.length > max)
+				{
+					str = str.substring(0, Math.round(max / 2)) + '...' +
+						str.substring(str.length - Math.round(max / 4));
+				}
+
+				return str;
+			};
 
 			var a = document.createElement('a');
+			a.setAttribute('rel', 'nofollow noopener noreferrer');
 			a.setAttribute('href', this.getAbsoluteUrl(link));
-
-			if (link != null && !this.isCustomLink(link))
-			{
-				a.setAttribute('title', link);
-			}
+			a.setAttribute('title', short((this.isCustomLink(link)) ?
+				this.getLinkTitle(link) : link, 80));
 
 			if (this.linkTarget != null)
 			{
@@ -6985,16 +7090,17 @@ if (typeof mxVertexHandler != 'undefined')
 			}
 
 			// Adds shortened label to link
-			var max = 40;
-			var head = 26;
-			var tail = 10;
+			mxUtils.write(a, short(label, 40));
 
-			if (label.length > max)
+			// Handles custom links
+			if (this.isCustomLink(link))
 			{
-				label = label.substring(0, head) + '...' + label.substring(label.length - tail);
+				mxEvent.addListener(a, 'click', mxUtils.bind(this, function(evt)
+				{
+					this.customLinkClicked(link);
+					mxEvent.consume(evt);
+				}));
 			}
-
-			mxUtils.write(a, label);
 
 			return a;
 		};
@@ -8506,7 +8612,6 @@ if (typeof mxVertexHandler != 'undefined')
 				{
 					this.linkHint = createHint();
 					this.linkHint.style.padding = '6px 8px 6px 8px';
-					this.linkHint.style.fontSize = '90%';
 					this.linkHint.style.opacity = '1';
 					this.linkHint.style.filter = '';
 
@@ -8563,8 +8668,8 @@ if (typeof mxVertexHandler != 'undefined')
 						var div = document.createElement('div');
 						div.style.marginTop = (link != null || i > 0) ? '6px' : '0px';
 						div.appendChild(this.graph.createLinkForHint(
-								links[i].getAttribute('href'),
-								mxUtils.getTextContent(links[i])));
+							links[i].getAttribute('href'),
+							mxUtils.getTextContent(links[i])));
 
 						this.linkHint.appendChild(div);
 					}

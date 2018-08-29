@@ -2280,12 +2280,16 @@ App.prototype.start = function()
 								this.hideDialog();
 								var prev = Editor.useLocalStorage;
 								this.createFile((filename.length > 0) ? filename : this.defaultFilename,
-									this.getFileData(), null, null, null, null, null, true);
+									this.getFileData(), null, null, null, true, null, true);
 								Editor.useLocalStorage = prev;
 							}
 							else
 							{
-								this.createFile(filename, this.getFileData(true), null, mode);
+								this.pickFolder(mode, mxUtils.bind(this, function(folderId)
+								{
+									this.createFile(filename, this.getFileData(true),
+										null, mode, null, true, folderId);
+								}));
 							}
 						}), null, null, null, null, urlParams['browser'] == '1', null, null, true, rowLimit);
 						this.showDialog(dlg.container, 380, (serviceCount > rowLimit) ? 390 : 270,
@@ -2972,7 +2976,7 @@ App.prototype.saveFile = function(forceDialog)
 						
 						// Do not use a filename to use undefined mode
 						window.openFile.setData(this.getFileData(true));
-						this.openLink(this.getUrl(window.location.pathname));
+						this.openLink(this.getUrl(window.location.pathname), null, true);
 					}
 					else if (prev != mode)
 					{
@@ -2982,7 +2986,7 @@ App.prototype.saveFile = function(forceDialog)
 								name.indexOf('.') < 0, /(\.svg)$/i.test(name),
 								/(\.html)$/i.test(name)), null, mode, done,
 								this.mode == null, folderId);
-						}), mode !== App.MODE_GITHUB);
+						}));
 					}
 					else if (mode != null)
 					{
@@ -3008,7 +3012,7 @@ App.prototype.saveFile = function(forceDialog)
  * @param {number} dx X-coordinate of the translation.
  * @param {number} dy Y-coordinate of the translation.
  */
-EditorUi.prototype.loadTemplate = function(url, onload, onerror)
+App.prototype.loadTemplate = function(url, onload, onerror)
 {
 	var realUrl = url;
 	
@@ -3039,11 +3043,14 @@ EditorUi.prototype.loadTemplate = function(url, onload, onerror)
 				}
 			}), url);
 		}
-		else if (data.substring(0, 26) == '{"state":"{\\"Properties\\":')
+		else if (this.isLucidChartData(data))
 		{
-			this.importLucidChart(data, 0, 0, false, mxUtils.bind(this, function()
+			this.convertLucidChart(data, mxUtils.bind(this, function(xml)
 			{
-				onload(this.getFileData(true));
+				onload(xml);
+			}), mxUtils.bind(this, function(e)
+			{
+				onerror(e);
 			}));
 		}
 		else
@@ -3125,85 +3132,93 @@ App.prototype.createFile = function(title, data, libs, mode, done, replace, fold
 			}
 		});
 		
-		if (mode == App.MODE_GOOGLE && this.drive != null)
+		try
 		{
-			folderId = (this.stateArg != null) ? this.stateArg.folderId : folderId;
-
-			this.drive.insertFile(title, data, folderId, mxUtils.bind(this, function(file)
+			if (mode == App.MODE_GOOGLE && this.drive != null)
 			{
-				complete();
-				this.fileCreated(file, libs, replace, done);
-			}), error);
-		}
-		else if (mode == App.MODE_GITHUB && this.gitHub != null)
-		{
-			this.pickFolder(mode, mxUtils.bind(this, function(folderId)
+				if (folderId == null && this.stateArg != null && this.stateArg.folderId != null)
+				{
+					folderId = this.stateArg.folderId;
+				}
+	
+				this.drive.insertFile(title, data, folderId, mxUtils.bind(this, function(file)
+				{
+					complete();
+					this.fileCreated(file, libs, replace, done);
+				}), error);
+			}
+			else if (mode == App.MODE_GITHUB && this.gitHub != null)
 			{
 				this.gitHub.insertFile(title, data, mxUtils.bind(this, function(file)
 				{
 					complete();
 					this.fileCreated(file, libs, replace, done);
 				}), error, false, folderId);
-			}));
-		}
-		else if (mode == App.MODE_TRELLO && this.trello != null)
-		{
-			this.trello.insertFile(title, data, mxUtils.bind(this, function(file)
+			}
+			else if (mode == App.MODE_TRELLO && this.trello != null)
 			{
-				complete();
-				this.fileCreated(file, libs, replace, done);
-			}), error, false, folderId);
-		}
-		else if (mode == App.MODE_DROPBOX && this.dropbox != null)
-		{
-			this.dropbox.insertFile(title, data, mxUtils.bind(this, function(file)
-			{
-				complete();
-				this.fileCreated(file, libs, replace, done);
-			}), error);
-		}
-		else if (mode == App.MODE_ONEDRIVE && this.oneDrive != null)
-		{
-			this.oneDrive.insertFile(title, data, mxUtils.bind(this, function(file)
-			{
-				complete();
-				this.fileCreated(file, libs, replace, done);
-			}), error, false, folderId);
-		}
-		else if (mode == App.MODE_BROWSER)
-		{
-			complete();
-			
-			var fn = mxUtils.bind(this, function()
-			{
-				var file = new StorageFile(this, data, title);
-				
-				// Inserts data into local storage
-				file.saveFile(title, false, mxUtils.bind(this, function()
+				this.trello.insertFile(title, data, mxUtils.bind(this, function(file)
 				{
+					complete();
+					this.fileCreated(file, libs, replace, done);
+				}), error, false, folderId);
+			}
+			else if (mode == App.MODE_DROPBOX && this.dropbox != null)
+			{
+				this.dropbox.insertFile(title, data, mxUtils.bind(this, function(file)
+				{
+					complete();
 					this.fileCreated(file, libs, replace, done);
 				}), error);
-			});
-			
-			if (localStorage.getItem(title) == null)
+			}
+			else if (mode == App.MODE_ONEDRIVE && this.oneDrive != null)
 			{
-				fn();
+				this.oneDrive.insertFile(title, data, mxUtils.bind(this, function(file)
+				{
+					complete();
+					this.fileCreated(file, libs, replace, done);
+				}), error, false, folderId);
+			}
+			else if (mode == App.MODE_BROWSER)
+			{
+				complete();
+				
+				var fn = mxUtils.bind(this, function()
+				{
+					var file = new StorageFile(this, data, title);
+					
+					// Inserts data into local storage
+					file.saveFile(title, false, mxUtils.bind(this, function()
+					{
+						this.fileCreated(file, libs, replace, done);
+					}), error);
+				});
+				
+				if (localStorage.getItem(title) == null)
+				{
+					fn();
+				}
+				else
+				{
+					this.confirm(mxResources.get('replaceIt', [title]), fn, mxUtils.bind(this, function()
+					{
+						if (this.getCurrentFile() == null && this.dialog == null)
+						{
+							this.showSplash();
+						}
+					}));
+				}
 			}
 			else
 			{
-				this.confirm(mxResources.get('replaceIt', [title]), fn, mxUtils.bind(this, function()
-				{
-					if (this.getCurrentFile() == null && this.dialog == null)
-					{
-						this.showSplash();
-					}
-				}));
+				complete();
+				this.fileCreated(new LocalFile(this, data, title, mode == null), libs, replace, done);
 			}
 		}
-		else
+		catch (e)
 		{
 			complete();
-			this.fileCreated(new LocalFile(this, data, title, mode == null), libs, replace, done);
+			this.handleError(e);	
 		}
 	}
 };
