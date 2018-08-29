@@ -1002,6 +1002,13 @@ mxUtils.extend(Graph, mxGraph);
 					//Per evitare che il testo venga nascosto dal simbolo
 					var vertexToGroup = attr.text;
 					if(vertexToGroup.length>0) {
+            var i;
+    				//Rendo il testo immobile
+    				for(i=0; i<vertexToGroup.length; i++) {
+    					vertexToGroup[i].style = mxUtils.setStyle(vertexToGroup[i].style, mxConstants.STYLE_MOVABLE, 0);
+    					vertexToGroup[i].style = mxUtils.setStyle(vertexToGroup[i].style, mxConstants.STYLE_ROTATABLE, 0);
+    					vertexToGroup[i].style = mxUtils.setStyle(vertexToGroup[i].style, mxConstants.STYLE_RESIZABLE, 0);
+    				}
 						vertexToGroup.push(v1);
 						this.setSelectionCell(this.groupCells(null, 0, vertexToGroup.reverse()));
 					}
