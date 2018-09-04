@@ -1079,7 +1079,7 @@ Menus.prototype.createPopupMenu = function(menu, cell, evt)
 
 
 			}
-			if(graph.getSelectionCount() > 1 && graph.isShapeMode()) {
+			if(graph.getSelectionCount() > 0 && graph.isShapeMode()) {
 				var i;
 				var selectionContainsChildren = false;
 				var selection = graph.getSelectionCells();

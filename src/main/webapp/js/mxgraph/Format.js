@@ -1756,7 +1756,7 @@ ArrangePanel.prototype.addGroupOps = function(div)
 		count++;
 	}
 	//Aggiungo il bottone per creare lo shape
-	if(graph.getSelectionCount() > 1) {
+	if(graph.getSelectionCount() > 0) {
 		var i;
 		var selectionContainsChildren = false;
 		var selection = graph.getSelectionCells();
@@ -2767,7 +2767,7 @@ TextFormatPanel.prototype.addFont = function(container)
 	colorPanel.style.borderTop = '1px solid #c0c0c0';
 	colorPanel.style.paddingTop = '6px';
 	colorPanel.style.paddingBottom = '6px';
-	
+
 	var fontMenu = this.editorUi.toolbar.addMenu('Helvetica', mxResources.get('fontFamily'),
 		true, 'fontFamily', stylePanel, null, true);
 	fontMenu.style.color = 'rgb(112, 112, 112)';
