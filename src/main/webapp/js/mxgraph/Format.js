@@ -1506,13 +1506,13 @@ ArrangePanel.prototype.init = function()
 		}
 	}*/
 
-	if(graph.getSelectionCount()==1 && !graph.getSelectionCell().isConstraint() && graph.getSelectionCell().isAreaConstraint()) {
+/*	if(graph.getSelectionCount()==1 && !graph.getSelectionCell().isConstraint() && graph.getSelectionCell().isAreaConstraint()) {
 		this.container.appendChild(this.addFill(this.createPanel()));
 	}
 
 	if(graph.getSelectionCount()==1 && (graph.getSelectionCell().isConstraint() || graph.getSelectionCell().isOutlineConstraint())) {
 		this.container.appendChild(this.addStroke(this.createPanel()));
-	}
+	}*/
 };
 
 ArrangePanel.prototype.addFill = function(container) {
@@ -4083,13 +4083,13 @@ StyleFormatPanel.prototype.init = function()
 	if(graph.isShapeMode() && !graph.selectionContainsConstraints()) {
 
 			this.container.appendChild(this.addLineJumps(this.createPanel()));
-			var opacityPanel = this.createRelativeOption(mxResources.get('opacity'), mxConstants.STYLE_OPACITY, 41);
+			/*var opacityPanel = this.createRelativeOption(mxResources.get('opacity'), mxConstants.STYLE_OPACITY, 41);
 			opacityPanel.style.paddingTop = '8px';
 			opacityPanel.style.paddingBottom = '8px';
 			if(!ss.style.shape.includes('stencil')) {
 				this.container.appendChild(opacityPanel);
 			}
-			this.container.appendChild(this.addEffects(this.createPanel()));
+			this.container.appendChild(this.addEffects(this.createPanel()));*/
 
 			var opsPanel = this.addEditOps(this.createPanel());
 
@@ -4376,7 +4376,7 @@ StyleFormatPanel.prototype.addFill = function(container)
 		mxEvent.consume(evt);
 	});
 	container.appendChild(fillPanel);
-	container.appendChild(gradientPanel);
+	//container.appendChild(gradientPanel);
 
 	// Adds custom colors
 	var custom = this.getCustomColors();

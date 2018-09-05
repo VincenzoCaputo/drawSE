@@ -193,11 +193,11 @@ Toolbar.prototype.init = function()
 	var divL = document.createElement('div');
 	divL.style.float = 'left';
 	divL.style.margin = '7px';
-	mxUtils.write(divL, 'Shape Editor');
+	mxUtils.write(divL, 'Shape Mode');
 	var divR = document.createElement('div');
 	divR.style.float = 'left';
 	divR.style.margin = '7px';
-	mxUtils.write(divR, 'Constraint Editor');
+	mxUtils.write(divR, 'Constraint Mode');
 	this.container.appendChild(divL);
 	this.container.appendChild(label);
 	this.container.appendChild(divR);

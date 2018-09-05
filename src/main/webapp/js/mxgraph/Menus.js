@@ -1094,7 +1094,7 @@ Menus.prototype.createPopupMenu = function(menu, cell, evt)
 					this.addMenuItems(menu, ['merge'], null, evt);
 				}
 			}
-			if(graph.getSelectionCount()==1 && (graph.getSelectionCell().style.includes('shape=') || graph.getSelectionCell().style.includes('group'))) {
+			if(graph.getSelectionCount()==1 && (graph.getSelectionCell().style.includes('shape=') || graph.getSelectionCell().style.includes('group')) && graph.isShapeMode()) {
 				menu.addSeparator();
 				this.addMenuItems(menu, ['unmerge'], null, evt);
 			}

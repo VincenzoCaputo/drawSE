@@ -2615,22 +2615,23 @@
 				{
 					this.addMenuItems(menu, ['new'], parent);
 				}
+				if(graph.isShapeMode()) {
+					this.addSubmenu('openFrom', menu, parent);
 
-				this.addSubmenu('openFrom', menu, parent);
-
-				if (isLocalStorage)
-				{
-					this.addSubmenu('openRecent', menu, parent);
+					if (isLocalStorage)
+					{
+						this.addSubmenu('openRecent', menu, parent);
+					}
 				}
-
 				if (file != null && file.constructor == DriveFile)
 				{
 					this.addMenuItems(menu, ['new', '-', 'rename', 'makeCopy', 'moveToFolder'], parent);
 				}
 				else
 				{
-					this.addMenuItems(menu, ['-', 'save', 'saveAs', '-', 'rename'], parent);
-
+					if(graph.isShapeMode()) {
+						this.addMenuItems(menu, ['-', 'save', 'saveAs', '-', 'rename'], parent);
+					}
 					if (editorUi.isOfflineApp())
 					{
 						if (navigator.onLine && urlParams['stealth'] != '1')
@@ -2650,9 +2651,11 @@
 				}
 
 				menu.addSeparator(parent);
-				this.addSubmenu('importFrom', menu, parent);
-				this.addSubmenu('exportAs', menu, parent);
-				menu.addSeparator(parent);
+				if(graph.isShapeMode()) {
+					this.addSubmenu('importFrom', menu, parent);
+					this.addSubmenu('exportAs', menu, parent);
+					menu.addSeparator(parent);
+				}
 				this.addSubmenu('embed', menu, parent);
 				this.addSubmenu('publish', menu, parent);
 				menu.addSeparator(parent);
