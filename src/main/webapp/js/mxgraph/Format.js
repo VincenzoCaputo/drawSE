@@ -2041,9 +2041,6 @@ ArrangePanel.prototype.addConstraintPanel = function(div) {
 				} else {
 					ui.actions.get('disableAreaConstraint').funct();
 				}
-				var style = selectedCell.style;
-				style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCell.areaConstraintColor);
-				graph.getModel().setStyle(selectedCell, style);
 		});
 	}
 	return div;

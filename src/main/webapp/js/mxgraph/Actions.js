@@ -67,7 +67,7 @@ Actions.prototype.init = function()
 		if(graph.isConstraintMode()) {
 			mxUtils.alert("You can save only in Shape Mode!");
 		} else {
-			ui.saveFile(false); 
+			ui.saveFile(false);
 		}
 	}, null, null, Editor.ctrlKey + '+S').isEnabled = isGraphEnabled;
 	this.addAction('saveAs...', function() {
@@ -332,6 +332,9 @@ Actions.prototype.init = function()
 			graph.refresh();
 		} else {
 			selectedCells[0].addAreaConstraint();
+			var style = selectedCells[0].style;
+			style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCells[0].areaConstraintColor);
+			graph.getModel().setStyle(selectedCells[0], style);
 			graph.refresh();
 		}
 		graph.refresh();
@@ -351,6 +354,9 @@ Actions.prototype.init = function()
 				}
 			} else {
 				selectedCells[0].removeAreaConstraint();
+				var style = selectedCells[0].style;
+				style = mxUtils.setStyle(style, mxConstants.STYLE_FILLCOLOR,  selectedCells[0].areaConstraintColor);
+				graph.getModel().setStyle(selectedCells[0], style);
 			}
 			graph.refresh();
 	});
