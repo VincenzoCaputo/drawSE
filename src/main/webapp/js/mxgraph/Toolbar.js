@@ -197,7 +197,7 @@ Toolbar.prototype.init = function()
 	var divR = document.createElement('div');
 	divR.style.float = 'left';
 	divR.style.margin = '7px';
-	mxUtils.write(divR, 'Constraint Mode');
+	mxUtils.write(divR, 'AP Mode');
 	this.container.appendChild(divL);
 	this.container.appendChild(label);
 	this.container.appendChild(divR);
